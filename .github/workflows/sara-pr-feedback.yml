@@ -4,6 +4,8 @@
 name: Sara PR feedback intake
 
 on:
+  pull_request:
+    types: [opened, synchronize, reopened]
   issue_comment:
     types: [created]
   pull_request_review:
@@ -25,6 +27,7 @@ jobs:
   intake:
     if: >-
       github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'pull_request' ||
       (
         github.event.sender.login == 'Skanky0815' &&
         (
