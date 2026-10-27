@@ -45,9 +45,15 @@ mod tests {
         let migrations = sqlx_core::migrate::Migrator::new(std::path::Path::new("./migrations"))
             .await
             .expect("migration files must load");
-        migrations.run(&pool).await.expect("initial migration must apply");
+        migrations
+            .run(&pool)
+            .await
+            .expect("initial migration must apply");
         // A second run verifies that the migration is idempotent at the runner level.
-        migrations.run(&pool).await.expect("migration rerun must succeed");
+        migrations
+            .run(&pool)
+            .await
+            .expect("migration rerun must succeed");
         sqlx_core::query::query("SELECT id FROM personas LIMIT 0")
             .execute(&pool)
             .await
@@ -57,5 +63,4 @@ mod tests {
             .await
             .expect("memories table must exist");
     }
-
 }
