@@ -12,6 +12,20 @@ jobs:
   rust-qa:
     name: Format, lint and test
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: sara
+          POSTGRES_PASSWORD: sara_ci_test
+          POSTGRES_DB: sara
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U sara -d sara"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - name: Install stable Rust with rustfmt and clippy
@@ -24,7 +38,9 @@ jobs:
         run: cargo fmt --all -- --check
       - name: Run Clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
-      - name: Run tests
+      - name: Run tests (including PostgreSQL migration integration)
+        env:
+          DATABASE_URL: postgres://sara:sara_ci_test@127.0.0.1:5432/sara
         run: cargo test --all-targets --all-features
       - name: Generate dependency lockfile for audit
         run: cargo generate-lockfile
