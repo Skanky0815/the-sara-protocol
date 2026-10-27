@@ -30,4 +30,32 @@ mod tests {
             .iter()
             .any(|migration| migration.version == 20261027200000));
     }
+
+    // CI supplies DATABASE_URL and a fresh PostgreSQL service. Local unit tests
+    // can still run without Docker; the integration check is skipped in that case.
+    #[tokio::test]
+    async fn postgres_applies_migrations_and_creates_tables() {
+        let Ok(url) = std::env::var("DATABASE_URL") else {
+            eprintln!("Skipping PostgreSQL integration test: DATABASE_URL is unset");
+            return;
+        };
+        let pool = sqlx_postgres::PgPool::connect(&url)
+            .await
+            .expect("PostgreSQL must be reachable");
+        let migrations = sqlx_core::migrate::Migrator::new(std::path::Path::new("./migrations"))
+            .await
+            .expect("migration files must load");
+        migrations.run(&pool).await.expect("initial migration must apply");
+        // A second run verifies that the migration is idempotent at the runner level.
+        migrations.run(&pool).await.expect("migration rerun must succeed");
+        sqlx_core::query::query("SELECT id FROM personas LIMIT 0")
+            .execute(&pool)
+            .await
+            .expect("personas table must exist");
+        sqlx_core::query::query("SELECT id FROM memories LIMIT 0")
+            .execute(&pool)
+            .await
+            .expect("memories table must exist");
+    }
+
 }
