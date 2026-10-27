@@ -13,6 +13,7 @@ Rust · Axum · Tokio · Serde · SQLx · PostgreSQL (JSONB, later pgvector) · 
 - [Persona summary](docs/persona.md)
 - [Fictional world-state: Sara's apartment and Pixel](docs/world-state.md)
 - [MVP roadmap](docs/roadmap.md)
+- [Architecture Decision Records](docs/adr/README.md)
 - [Coding-agent guidelines](AGENTS.md)
 
 ## Getting started (planned)
