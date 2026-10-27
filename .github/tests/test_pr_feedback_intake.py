@@ -1,6 +1,10 @@
 """Unit tests for PR feedback event eligibility."""
 import unittest
-from scripts.pr_feedback_intake import eligible, pr_number
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
+from pr_feedback_intake import eligible, pr_number
 
 
 class FeedbackIntakeTests(unittest.TestCase):
