@@ -19,6 +19,14 @@ The service loads `.env` for local development; exported environment variables t
 `HOST` defaults to `127.0.0.1` and `PORT` defaults to `3000`.
 `DATABASE_URL` is required. Invalid values cause startup to fail with an error.
 Database connectivity and SQLx migrations are checked at startup, before binding the HTTP port.
+Run the service from the repository root: migrations are loaded from `./migrations`
+at runtime. When distributing the binary, include that directory in its working
+directory. Missing or unreadable migrations prevent startup.
+
+The service uses sqlx-core and sqlx-postgres directly, without SQLx macros,
+to keep optional MySQL dependencies (including `rsa`,
+affected by RUSTSEC-2023-0071) out of the lockfile. See
+[ADR 0004](adr/0004-runtime-migrations.md).
 
 In another terminal:
 

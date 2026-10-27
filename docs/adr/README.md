@@ -10,5 +10,6 @@ Each ADR records date, status, context, decision, alternatives, consequences and
 - [0001 – Rust web service with Axum](0001-rust-axum.md) — Accepted (documented retroactively)
 - [0002 – PostgreSQL JSONB with optional pgvector](0002-postgresql-jsonb.md) — Accepted (documented retroactively)
 - [0003 – AI contribution attribution](0003-ai-contribution-attribution.md) — Proposed
+- [0004 – Runtime migration loading without SQLx macros](0004-runtime-migrations.md) — Proposed
 
 Authorship in an ADR is a documentation claim, not proof of Git commit authorship. GitHub connector commits may use the integration identity; do not spoof a human or claim an AI GitHub account exists.
