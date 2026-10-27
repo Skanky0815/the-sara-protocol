@@ -39,7 +39,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          EVENT_PATH: ${{ github.event_path }}
           EVENT_NAME: ${{ github.event_name }}
         shell: bash
         run: |
@@ -47,7 +46,7 @@ jobs:
           import json, os, subprocess
           from pathlib import Path
 
-          event = json.loads(Path(os.environ["EVENT_PATH"]).read_text())
+          event = json.loads(Path(os.environ["GITHUB_EVENT_PATH"]).read_text())
           name = os.environ["EVENT_NAME"]
           if name == "workflow_dispatch":
               print("Manual smoke test: intake workflow is installed.")
