@@ -4,14 +4,14 @@ on:
   pull_request:
     paths:
       - '.github/workflows/**'
-      - 'scripts/pr_feedback_intake.py'
-      - 'tests/test_pr_feedback_intake.py'
+      - '.github/scripts/**'
+      - '.github/tests/**'
   push:
     branches: [main]
     paths:
       - '.github/workflows/**'
-      - 'scripts/pr_feedback_intake.py'
-      - 'tests/test_pr_feedback_intake.py'
+      - '.github/scripts/**'
+      - '.github/tests/**'
 
 permissions:
   contents: read
@@ -31,4 +31,4 @@ jobs:
       - name: Install pytest
         run: python -m pip install pytest==8.3.5
       - name: Unit tests
-        run: python -m pytest -q tests/test_pr_feedback_intake.py
+        run: python -m pytest -q .github/tests/test_pr_feedback_intake.py
