@@ -15,7 +15,7 @@ def eligible(event_name, event, pr_author):
         return pr_author == AUTHOR
     if event.get("sender", {}).get("login") != OWNER:
         return False
-    if event_name == "issue_comment" and not event.get("issue", {}).get("pull_request"):
+    if event_name == "issue_comment" and "pull_request" not in event.get("issue", {}):
         return False
     if event_name not in {"issue_comment", "pull_request_review", "pull_request_review_comment"}:
         return False
