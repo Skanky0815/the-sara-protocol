@@ -1,0 +1,36 @@
+# IntelliJ HTTP Client - local Sara Protocol API
+# Start PostgreSQL: docker compose up -d postgres
+# Start service: cp .env.example .env && cargo run
+@baseUrl = http://127.0.0.1:3000
+@personaId = 1
+
+### Health
+GET {{baseUrl}}/health
+
+### Create a confirmed memory (requires an existing persona)
+POST {{baseUrl}}/personas/{{personaId}}/memories
+Content-Type: application/json
+
+{
+  "content": "Prefers short, direct answers.",
+  "source": "conversation",
+  "observed_at": "2026-10-28T12:00:00Z",
+  "confirmation_status": "confirmed"
+}
+
+### Create an inferred memory
+POST {{baseUrl}}/personas/{{personaId}}/memories
+Content-Type: application/json
+
+{
+  "content": "May enjoy science fiction.",
+  "source": "inference",
+  "observed_at": "2026-10-28T12:00:00Z",
+  "confirmation_status": "inferred"
+}
+
+### List memories belonging to this persona
+GET {{baseUrl}}/personas/{{personaId}}/memories
+
+### Verify missing persona returns 404
+GET {{baseUrl}}/personas/999999999/memories

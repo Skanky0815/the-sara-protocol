@@ -15,7 +15,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let address = (config.host, config.port);
     let listener = TcpListener::bind(address).await?;
     println!("Listening on http://{}:{}", config.host, config.port);
-    axum::serve(listener, the_sara_protocol::app()).await?;
+    axum::serve(listener, the_sara_protocol::app_with_pool(pool)).await?;
     Ok(())
 }
 
@@ -29,6 +29,9 @@ mod tests {
         assert!(migrations
             .iter()
             .any(|migration| migration.version == 20261027200000));
+        assert!(migrations
+            .iter()
+            .any(|migration| migration.version == 20261028130000));
     }
 
     // CI supplies DATABASE_URL and a fresh PostgreSQL service. Local unit tests
@@ -45,11 +48,7 @@ mod tests {
         let migrations = sqlx_core::migrate::Migrator::new(std::path::Path::new("./migrations"))
             .await
             .expect("migration files must load");
-        migrations
-            .run(&pool)
-            .await
-            .expect("initial migration must apply");
-        // A second run verifies that the migration is idempotent at the runner level.
+        migrations.run(&pool).await.expect("migrations must apply");
         migrations
             .run(&pool)
             .await
@@ -58,9 +57,11 @@ mod tests {
             .execute(&pool)
             .await
             .expect("personas table must exist");
-        sqlx_core::query::query("SELECT id FROM memories LIMIT 0")
-            .execute(&pool)
-            .await
-            .expect("memories table must exist");
+        sqlx_core::query::query(
+            "SELECT id, observed_at, confirmation_status FROM memories LIMIT 0",
+        )
+        .execute(&pool)
+        .await
+        .expect("memory provenance columns must exist");
     }
 }
