@@ -1,7 +1,10 @@
 pub mod config;
+pub mod memories;
 
 use axum::{routing::get, Json, Router};
+use memories::AppState;
 use serde::Serialize;
+use sqlx_postgres::PgPool;
 
 #[derive(Serialize)]
 struct HealthResponse {
@@ -14,6 +17,10 @@ async fn health() -> Json<HealthResponse> {
 
 pub fn app() -> Router {
     Router::new().route("/health", get(health))
+}
+
+pub fn app_with_pool(pool: PgPool) -> Router {
+    app().merge(memories::routes().with_state(AppState { pool }))
 }
 
 #[cfg(test)]
