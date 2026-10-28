@@ -40,7 +40,11 @@ cargo audit
 
 Die Datenbank `sara_test` muss zuvor existieren; auf einer frischen lokalen Compose-Datenbank kann sie aus dem Root mit `docker compose exec postgres createdb -U sara sara_test` angelegt werden. `cargo audit` benötigt das separat installierte Werkzeug `cargo-audit` und Zugriff auf die aktuelle RustSec-Datenbank. Es prüft `backend/Cargo.lock`; der Lockfile wird für das Audit nicht neu erzeugt.
 
-CI führt dieselben Prüfungen aus `backend/` aus, mit einem frischen PostgreSQL-Service und einem Cache für `backend/target`. Die separate Aufteilung in parallele Jobs bleibt [Issue #27](https://github.com/Skanky0815/the-sara-protocol/issues/27).
+CI führt diese Prüfungen aus `backend/` in vier unabhängigen Jobs aus: `Format`, `Clippy`, `Tests (PostgreSQL)` und `Dependency audit`. Ein Formatfehler überspringt weder Linting noch Tests oder Audit. Nur der Test-Job startet einen frischen PostgreSQL-Service und setzt `DATABASE_URL`; Clippy und Tests cachen `backend/target` mit getrennten Cache-Schlüsseln. Der eingecheckte Lockfile bleibt verbindlich.
+
+Der Workflow startet bei Pull Requests und Pushes auf `main` nur für Änderungen unter `backend/**` oder an `.github/workflows/rust-qa.yml`. Reine Dokumentations- oder Frontend-Änderungen lösen keine Rust-Prüfungen aus. Werden künftig gemeinsam genutzte Rust-/CI-Konfigurationen außerhalb von `backend/` ergänzt, muss der Pfadfilter erweitert werden.
+
+Der aktuelle Repository-Regelsatz verlangt keine Rust-Statuschecks. Falls diese später verpflichtend werden, darf ein auf Workflow-Ebene übersprungener Check reine Doku-/Frontend-PRs nicht blockieren: dafür zuerst einen immer ausgeführten Ergebnis-Job mit interner Änderungserkennung einführen oder die Pflichtcheck-Strategie entsprechend anpassen. Die Review-Pflicht bleibt unverändert. Die Optimierung der `cargo-audit`-Installation bleibt [Issue #22](https://github.com/Skanky0815/the-sara-protocol/issues/22).
 
 ## Containerbetrieb
 

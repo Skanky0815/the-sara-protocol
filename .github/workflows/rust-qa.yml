@@ -2,19 +2,58 @@ name: Rust QA
 
 on:
   pull_request:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/rust-qa.yml'
   push:
     branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/rust-qa.yml'
 
 permissions:
   contents: read
 
+defaults:
+  run:
+    working-directory: backend
+
 jobs:
-  rust-qa:
-    name: Format, lint and test
+  format:
+    name: Format
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install stable Rust with rustfmt
+        run: rustup toolchain install stable --profile minimal --component rustfmt
+      - name: Select stable Rust
+        run: rustup default stable
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install stable Rust with clippy
+        run: rustup toolchain install stable --profile minimal --component clippy
+      - name: Select stable Rust
+        run: rustup default stable
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: backend -> target
+          key: clippy
+      - name: Run Clippy
+        run: cargo clippy --locked --all-targets --all-features -- -D warnings
+
+  test:
+    name: Tests (PostgreSQL)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
     services:
       postgres:
         image: postgres:17
@@ -31,22 +70,30 @@ jobs:
           --health-retries 10
     steps:
       - uses: actions/checkout@v4
-      - name: Install stable Rust with rustfmt and clippy
-        run: rustup toolchain install stable --profile minimal --component rustfmt --component clippy
+      - name: Install stable Rust
+        run: rustup toolchain install stable --profile minimal
       - name: Select stable Rust
         run: rustup default stable
       - name: Cache Cargo
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: backend -> target
-      - name: Check formatting
-        run: cargo fmt --all -- --check
-      - name: Run Clippy
-        run: cargo clippy --locked --all-targets --all-features -- -D warnings
-      - name: Run tests (including PostgreSQL migration integration)
+          key: tests
+      - name: Run tests (including PostgreSQL migrations and memory API)
         env:
           DATABASE_URL: postgres://sara:sara_ci_test@127.0.0.1:5432/sara
         run: cargo test --locked --all-targets --all-features
+
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install stable Rust
+        run: rustup toolchain install stable --profile minimal
+      - name: Select stable Rust
+        run: rustup default stable
       - name: Install cargo-audit
         run: cargo install cargo-audit --locked
       - name: Audit dependency vulnerabilities
