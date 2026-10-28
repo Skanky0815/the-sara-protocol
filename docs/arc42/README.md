@@ -55,7 +55,7 @@ Geplanter MVP-Ablauf: Client ruft `GET /health` auf → Axum antwortet mit Healt
 
 ## 7. Verteilungssicht
 
-Lokaler Rust-Prozess und PostgreSQL über Docker Compose auf dem Mac. Container- und Netzwerktopologie sind noch offen.
+Das Rust-Paket liegt unter `backend/`, ohne Cargo-Workspace im Root. Lokal läuft der Prozess aus diesem Verzeichnis. Alternativ baut Compose mit dem Kontext `backend/` ein Backend-Image und startet es nach gesundem PostgreSQL. Das Backend läuft als unprivilegierter Benutzer aus `/app/backend` mit mitgeliefertem `migrations/`; es erreicht PostgreSQL intern unter `postgres:5432`. Host-Ports sind auf Loopback beschränkt. Gemeinsame Konfiguration und Docs bleiben im Root. Siehe [Entwicklungs- und Deployment-Anleitung](../getting-started.md) und [ADR 0005](../adr/0005-backend-directory.md).
 
 ## 8. Querschnittliche Konzepte
 

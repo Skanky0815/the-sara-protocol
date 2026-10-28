@@ -1,6 +1,6 @@
 # IntelliJ HTTP Client - local Sara Protocol API
-# Start PostgreSQL: docker compose up -d postgres
-# Start service: cp .env.example .env && cargo run
+# From repository root: docker compose up -d postgres
+# From backend/: cp .env.example .env && cargo run --locked
 @baseUrl = http://127.0.0.1:3000
 @personaId = 1
 

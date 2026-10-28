@@ -1,28 +1,47 @@
 # The Sara Protocol
 
-A planned local-first **persona, memory and world-state service** for multiple AI characters and LLM clients. Early architecture phase: the Rust MVP has not yet been verified as implemented.
+Lokaler Persona- und Memory-Service mit Rust, Axum und PostgreSQL. Das Backend bietet `GET /health` sowie das Speichern und Abrufen persona-spezifischer Memories mit Provenienz. Weitere Persona-, Such-, World-State- und Client-Funktionen stehen auf der [Roadmap](docs/roadmap.md).
 
-## Vision
-Store personas and memories with provenance, retrieve context through a REST API, and later manage fictional places, NPCs and scene state. Persona isolation and auditable administrative changes are core requirements.
+## Repository-Struktur
 
-## Proposed stack
-Rust · Axum · Tokio · Serde · SQLx · PostgreSQL (JSONB, later pgvector) · Docker Compose · IntelliJ IDEA Ultimate on macOS.
+```text
+backend/
+  Cargo.toml, Cargo.lock   Rust-Paket und verbindlicher Lockfile
+  src/, tests/            Backend und API-Tests
+  migrations/             SQLx-Migrationen
+  dev/persona.http        IntelliJ HTTP Client
+  .env.example            Lokale Backend-Konfiguration
+  Dockerfile              Backend-Image
+compose.yaml              Gemeinsame lokale Orchestrierung
+.github/                  CI und Projekt-Automatisierung
+docs/                     Gemeinsame Projekt- und Backend-Dokumentation
+AGENTS.md                 Arbeitsregeln für Coding-Agenten (Englisch)
+```
 
-## Documentation
-- [Architecture and proposed API](docs/architecture.md)
-- [Persona summary](docs/persona.md)
-- [Fictional world-state: Sara's apartment and Pixel](docs/world-state.md)
-- [MVP roadmap](docs/roadmap.md)
-- [Architecture Decision Records](docs/adr/README.md)
-- [Coding-agent guidelines](AGENTS.md)
+Ein späteres `frontend/` kann neben `backend/` liegen. Es gibt keinen Cargo-Workspace im Root; Cargo-Befehle laufen aus `backend/`, der einzige Lockfile liegt ebenfalls dort.
 
-## Getting started (planned)
-1. Install Rust/Cargo and Docker on macOS.
-2. Open the repository in IntelliJ with Rust support.
-3. Initialize the Cargo service if not yet present.
-4. Implement and test GET /health before adding persistence.
+## Lokal starten
 
-No executable setup commands are documented yet because the implementation state has not been verified.
+Voraussetzungen: aktuelle stabile Rust-Toolchain und Docker Compose.
 
-## Principles
-Local-first development; clear distinction between fictional persona content and operational system behavior; source-aware memories; multi-persona isolation; versioned, reversible administrative changes.
+```sh
+# Im Repository-Root:
+docker compose up -d postgres
+cd backend
+cp .env.example .env
+cargo run --locked
+```
+
+Alternativ startet `docker compose up --build -d --wait` aus dem Root das Backend und PostgreSQL gemeinsam. Die API ist unter `http://127.0.0.1:3000/health` erreichbar. Beide Startvarianten verwenden standardmäßig denselben API-Port; nur eine gleichzeitig starten.
+
+Die Konfiguration, Tests, SQLx-Migrationspfade und Container-Prüfungen beschreibt die [Entwicklungsanleitung](docs/getting-started.md).
+
+## Dokumentation
+
+- [Architektur und API-Planung](docs/architecture.md)
+- [Architekturentscheidungen](docs/adr/README.md)
+- [Persona](docs/persona.md)
+- [Fiktionaler World-State mit Pixel](docs/world-state.md)
+- [Arbeitsregeln](AGENTS.md)
+
+Personas und ihre Daten bleiben isoliert. Erinnerungen behalten ihre Herkunft; fiktionale Inhalte und operative Arbeitsstände werden getrennt behandelt.
