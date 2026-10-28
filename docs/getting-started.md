@@ -1,77 +1,97 @@
-# Local development (Issues #8 and #9)
+# Lokale Backend-Entwicklung
 
-Requires a recent stable Rust toolchain (`cargo`, `rustc`) and Docker Compose.
+Voraussetzungen: aktuelle stabile Rust-Toolchain mit `rustfmt` und Clippy sowie Docker Compose. Alle folgenden Cargo- und optionalen SQLx-CLI-Befehle laufen aus `backend/`. Compose-Befehle laufen aus dem Repository-Root. Ein Root-Workspace wird nicht verwendet; `backend/Cargo.lock` ist der einzige verbindliche Lockfile.
 
-Start PostgreSQL:
+## PostgreSQL und lokaler Prozess
 
 ```sh
+# Repository-Root:
 docker compose up -d postgres
-```
-
-Copy the example configuration:
-
-```sh
+cd backend
 cp .env.example .env
-cargo run
+cargo run --locked
 ```
 
-The service loads `.env` for local development; exported environment variables take precedence.
-`HOST` defaults to `127.0.0.1` and `PORT` defaults to `3000`.
-`DATABASE_URL` is required. Invalid values cause startup to fail with an error.
-Database connectivity and SQLx migrations are checked at startup, before binding the HTTP port.
-Run the service from the repository root: migrations are loaded from `./migrations`
-at runtime. When distributing the binary, include that directory in its working
-directory. Missing or unreadable migrations prevent startup.
+Der Dienst lädt `.env` für lokale Entwicklung. Bereits exportierte Umgebungsvariablen haben Vorrang. `HOST` ist standardmäßig `127.0.0.1`, `PORT` ist `3000`; `DATABASE_URL` ist erforderlich. Ungültige Konfiguration, Datenbankverbindungsfehler und fehlende oder unlesbare Migrationen verhindern den Start vor dem Öffnen des HTTP-Ports.
 
-The service uses sqlx-core and sqlx-postgres directly, without SQLx macros,
-to keep optional MySQL dependencies (including `rsa`,
-affected by RUSTSEC-2023-0071) out of the lockfile. See
-[ADR 0004](adr/0004-runtime-migrations.md).
+Die SQLx-Migrationen werden zur Laufzeit aus `./migrations` geladen, also lokal aus `backend/migrations`. Deshalb zuerst nach `backend/` wechseln: `cargo run --manifest-path backend/Cargo.toml` aus dem Root ändert das Arbeitsverzeichnis des gestarteten Programms nicht. `cargo build --locked` baut ebenfalls aus `backend/`. Eine separat verteilte Binary benötigt weiterhin ein mitgeliefertes `migrations/` im Arbeitsverzeichnis. Ein konfigurierbarer Migrationspfad oder separater Deployment-Migrationsschritt bleibt Gegenstand von [Issue #24](https://github.com/Skanky0815/the-sara-protocol/issues/24).
 
-In another terminal:
+SQLx wird direkt über `sqlx-core` und `sqlx-postgres` ohne Makros verwendet; siehe [ADR 0004](adr/0004-runtime-migrations.md). Die SQLx-CLI ist nicht für Start oder Tests erforderlich. Falls installiert, verwendet `sqlx migrate run --source migrations` aus `backend/` denselben Pfad und eine exportierte `DATABASE_URL`.
 
 ```sh
+# Anderes Terminal:
 curl -i http://127.0.0.1:3000/health
 ```
 
-Expected HTTP status: `200 OK`, JSON: `{"status":"ok"}`.
+Erwartet: HTTP `200 OK`, JSON `{"status":"ok"}`.
 
-Run unit tests:
+## Prüfungen
+
+Für Datenbanktests eine dedizierte Testdatenbank verwenden. Die Suite legt temporäre Persona-Zeilen an und entfernt sie wieder. Ohne `DATABASE_URL` werden Datenbanktests übersprungen.
 
 ```sh
+# Aus backend/; URL auf eine dedizierte Testdatenbank setzen:
+export DATABASE_URL=postgres://sara:sara_local_dev@127.0.0.1:5432/sara_test
 cargo fmt --all -- --check
-cargo clippy --all-targets --all-features -- -D warnings
-cargo test --all-targets --all-features
-```
-
-For an isolated migration smoke test, start with an empty Compose volume (`docker compose down -v` **deletes local database data**), then run `cargo run` and verify the process starts. Re-running `cargo run` should leave the applied migration intact.
-
-Do not commit `.env` or real database credentials. In CI and deployment, inject configuration as environment variables rather than copying a local `.env` file.
-
-## Persona memories (Issue #11)
-
-Use `dev/persona.http` in the IntelliJ HTTP Client. Set `@personaId` to the ID of an existing persona in your local database. Persona creation is tracked separately; this issue only adds memory endpoints.
-
-- `POST /personas/{id}/memories` expects JSON with `content`, `source`, `observed_at` (ISO-8601 timestamp with timezone), and `confirmation_status` (`confirmed` or `inferred`).
-- `GET /personas/{id}/memories` lists only memories owned by that persona, ordered by ID.
-- Unknown persona: HTTP 404. Empty content/source, invalid timestamps and nonpositive persona IDs: HTTP 400. An unsupported `confirmation_status` is rejected by JSON deserialization with HTTP 422. Successful creation: HTTP 201.
-- The initial schema's `created_at` remains the database insertion time; `observed_at` records the source event time.
-
-For persistence and persona-isolation integration tests, start PostgreSQL and run `DATABASE_URL=postgres://sara:sara_local_dev@127.0.0.1:5432/sara cargo test --test memory_api`. The test creates and removes temporary persona rows. Without `DATABASE_URL`, the integration test skips itself.
-
-To run the complete CI test suite locally, including migration and memory API
-checks, export the test database URL for all targets:
-
-```sh
-DATABASE_URL=postgres://sara:sara_local_dev@127.0.0.1:5432/sara cargo test --all-targets --all-features
+cargo clippy --locked --all-targets --all-features -- -D warnings
+cargo test --locked --all-targets --all-features
 cargo audit
 ```
 
-Use a dedicated test database. `cargo audit` requires the separately installed
-`cargo-audit` tool and access to the current RustSec advisory database.
+Die Datenbank `sara_test` muss zuvor existieren; auf einer frischen lokalen Compose-Datenbank kann sie aus dem Root mit `docker compose exec postgres createdb -U sara sara_test` angelegt werden. `cargo audit` benötigt das separat installierte Werkzeug `cargo-audit` und Zugriff auf die aktuelle RustSec-Datenbank. Es prüft `backend/Cargo.lock`; der Lockfile wird für das Audit nicht neu erzeugt.
 
-The memory API suite uses separate named tests for persistence, persona isolation
-and rejection cases. Each test creates its own persona so the tests can run in
-parallel. To run just one case, pass its name, for example
-`cargo test --test memory_api unknown_persona_returns_not_found` with `DATABASE_URL`
-set as above.
+CI führt dieselben Prüfungen aus `backend/` aus, mit einem frischen PostgreSQL-Service und einem Cache für `backend/target`. Die separate Aufteilung in parallele Jobs bleibt [Issue #27](https://github.com/Skanky0815/the-sara-protocol/issues/27).
+
+## Containerbetrieb
+
+```sh
+# Repository-Root:
+docker build -t sara-backend:local backend
+# Oder mit Compose bauen und starten:
+docker compose up --build -d --wait
+docker compose ps
+curl --fail http://127.0.0.1:3000/health
+```
+
+Der Build-Kontext ist ausschließlich `backend/`. Die dortige `.dockerignore` lässt nur Manifest, Lockfile, Quellcode und Migrationen zu; lokale `.env`-Dateien und Build-Artefakte gelangen nicht in den Kontext. Das mehrstufige Image enthält die Release-Binary und Migrationen, läuft als unprivilegierter Benutzer und verwendet `/app/backend` als Arbeitsverzeichnis. Der HTTP-Healthcheck prüft `/health`.
+
+Compose wartet auf den PostgreSQL-Healthcheck. Das Backend bindet im Container an `0.0.0.0:3000` und verbindet sich intern mit `postgres:5432`; Host-Zugriffe auf API und Datenbank sind auf Loopback beschränkt. PostgreSQL behält das bisherige benannte Volume `postgres_data`. Migrationen laufen vor dem HTTP-Start und sind bei erneutem Start idempotent.
+
+Die Zugangsdaten in Compose und `.env.example` sind ausschließlich für lokale Entwicklung. Für Deployments Konfiguration über Umgebungsvariablen injizieren; keine lokale `.env` kopieren oder Zugangsdaten committen.
+
+### Isolierter Container-Smoke-Test
+
+Damit eine bestehende Entwicklungsdatenbank und belegte Host-Ports unverändert bleiben, kann eine temporäre Override-Datei verwendet werden (Docker Compose mit Unterstützung für `!override`):
+
+```yaml
+# /tmp/sara-smoke.yaml
+services:
+  postgres:
+    ports: !override
+      - "127.0.0.1:55431:5432"
+  backend:
+    ports: !override
+      - "127.0.0.1:53031:3000"
+```
+
+```sh
+# Repository-Root:
+docker compose -p sara-smoke -f compose.yaml -f /tmp/sara-smoke.yaml up --build -d --wait
+curl --fail http://127.0.0.1:53031/health
+docker compose -p sara-smoke -f compose.yaml -f /tmp/sara-smoke.yaml restart backend
+docker compose -p sara-smoke -f compose.yaml -f /tmp/sara-smoke.yaml up -d --wait
+docker compose -p sara-smoke -f compose.yaml -f /tmp/sara-smoke.yaml down
+```
+
+Das Projekt `sara-smoke` hat ein eigenes Datenbankvolume. `down` behält Daten; `down -v` löscht die Volumes des ausgewählten Projekts und darf nur für entbehrliche Testdaten verwendet werden.
+
+## Memories und IntelliJ HTTP Client
+
+Die Requests liegen jetzt unter [`backend/dev/persona.http`](../backend/dev/persona.http). Diese Vorgabe aus [Issue #31](https://github.com/Skanky0815/the-sara-protocol/issues/31) ersetzt den früheren Root-Pfad `dev/persona.http` aus [Issue #11](https://github.com/Skanky0815/the-sara-protocol/issues/11). `@personaId` auf die ID einer vorhandenen Persona in der lokalen Datenbank setzen; die Persona-Erstellung ist eine separate Funktion.
+
+- `POST /personas/{id}/memories` erwartet `content`, `source`, `observed_at` (ISO-8601 mit Zeitzone) und `confirmation_status` (`confirmed` oder `inferred`). Erfolgreiche Erstellung: HTTP 201.
+- `GET /personas/{id}/memories` liefert nur die Memories der gewählten Persona, nach ID geordnet.
+- Unbekannte Persona: HTTP 404. Leerer Inhalt oder Quelle, ungültiger Zeitstempel und nichtpositive Persona-ID: HTTP 400. Nicht unterstützter Bestätigungsstatus: HTTP 422.
+- `created_at` bleibt die Datenbank-Einfügezeit; `observed_at` beschreibt den Zeitpunkt des Quellereignisses.
+
+Einzelne API-Tests aus `backend/` ausführen, zum Beispiel `cargo test --locked --test memory_api unknown_persona_returns_not_found`, mit gesetzter `DATABASE_URL` wie oben. Die unabhängigen Tests verwenden jeweils eigene Personas und können parallel laufen.

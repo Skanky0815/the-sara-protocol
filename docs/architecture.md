@@ -1,6 +1,6 @@
 # Architektur – The Sara Protocol
 
-Status: Entwurf, 2026-10-27. Noch kein implementierter Dienst.
+Status: Architekturentwurf mit implementiertem Health-Endpunkt und Memory-API; Monorepo-Struktur gemäß Issue #31, 2026-10-28.
 
 ## Ziel
 Portabler Persona- und Memory-Service für ChatGPT, lokale LLMs und IDE-Clients. REST zum Abrufen, Suchen und Persistieren. Trennung von Persona, Erinnerung und World-State.
@@ -26,3 +26,9 @@ Portabler Persona- und Memory-Service für ChatGPT, lokale LLMs und IDE-Clients.
 
 ## Offene Punkte
 Authentifizierung, API-Schema, Datenmodell, Embedding-Provider, Backup und Rechtekonzept sind noch zu entscheiden.
+
+## Repository und Betrieb
+
+Das Rust-Paket einschließlich Lockfile, Quellcode, Tests, SQLx-Migrationen, lokaler Konfiguration und Dockerfile liegt unter `backend/`. Ein späteres `frontend/` kann als Geschwisterverzeichnis ergänzt werden. Es gibt keinen Root-Cargo-Workspace. Gemeinsame Orchestrierung (`compose.yaml`), CI, Arbeitsregeln und Projektdokumentation bleiben im Root bzw. unter `docs/`. Backend-spezifische Entwicklungs- und Deployment-Anweisungen bleiben zentral in [getting-started.md](getting-started.md).
+
+Lokal wird aus `backend/` gestartet. Im Backend-Image liegt `migrations/` unter dem festen Arbeitsverzeichnis `/app/backend`; Compose startet das Backend erst nach gesundem PostgreSQL. Das bestehende Laufzeit-Migrationsmodell bleibt erhalten; ein konfigurierbarer Pfad aus Issue #24 wird hier nicht eingeführt. Siehe [ADR 0005](adr/0005-backend-directory.md).
