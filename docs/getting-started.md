@@ -93,7 +93,7 @@ Das Projekt `sara-smoke` hat ein eigenes Datenbankvolume. `down` behält Daten; 
 
 ## Memories und IntelliJ HTTP Client
 
-Die Requests liegen jetzt unter [`backend/dev/persona.http`](../backend/dev/persona.http). Diese Vorgabe aus [Issue #31](https://github.com/Skanky0815/the-sara-protocol/issues/31) ersetzt den früheren Root-Pfad `dev/persona.http` aus [Issue #11](https://github.com/Skanky0815/the-sara-protocol/issues/11). `@personaId` auf die ID einer vorhandenen Persona in der lokalen Datenbank setzen; die Persona-Erstellung ist eine separate Funktion.
+Die Requests liegen jetzt unter [`backend/dev/persona.http`](../backend/dev/persona.http). Diese Vorgabe aus [Issue #31](https://github.com/Skanky0815/the-sara-protocol/issues/31) ersetzt den früheren Root-Pfad `dev/persona.http` aus [Issue #11](https://github.com/Skanky0815/the-sara-protocol/issues/11). Zuerst den vorbereiteten `POST /personas`-Request ausführen und die Antwort-ID in `@personaId` übernehmen. Datenmodell und Fehlerantworten beschreibt die [Persona-API](persona-api.md).
 
 - `POST /personas/{id}/memories` erwartet `content`, `source`, `observed_at` (ISO-8601 mit Zeitzone) und `confirmation_status` (`confirmed` oder `inferred`). Erfolgreiche Erstellung: HTTP 201.
 - `GET /personas/{id}/memories` liefert nur die Memories der gewählten Persona, nach ID geordnet.

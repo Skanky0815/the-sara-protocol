@@ -1,5 +1,6 @@
 pub mod config;
 pub mod memories;
+pub mod personas;
 pub mod telemetry;
 
 use axum::{routing::get, Json, Router};
@@ -24,7 +25,9 @@ pub fn app_with_pool(pool: PgPool) -> Router {
     telemetry::trace_requests(
         Router::new()
             .route("/health", get(health))
-            .merge(memories::routes().with_state(AppState { pool })),
+            .merge(memories::routes())
+            .merge(personas::routes())
+            .with_state(AppState { pool }),
     )
 }
 
