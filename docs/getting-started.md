@@ -44,7 +44,9 @@ CI führt diese Prüfungen aus `backend/` in vier unabhängigen Jobs aus: `Forma
 
 Der Workflow startet bei Pull Requests und Pushes auf `main` nur für Änderungen unter `backend/**` oder an `.github/workflows/rust-qa.yml`. Reine Dokumentations- oder Frontend-Änderungen lösen keine Rust-Prüfungen aus. Werden künftig gemeinsam genutzte Rust-/CI-Konfigurationen außerhalb von `backend/` ergänzt, muss der Pfadfilter erweitert werden.
 
-Der aktuelle Repository-Regelsatz verlangt keine Rust-Statuschecks. Falls diese später verpflichtend werden, darf ein auf Workflow-Ebene übersprungener Check reine Doku-/Frontend-PRs nicht blockieren: dafür zuerst einen immer ausgeführten Ergebnis-Job mit interner Änderungserkennung einführen oder die Pflichtcheck-Strategie entsprechend anpassen. Die Review-Pflicht bleibt unverändert. Die Optimierung der `cargo-audit`-Installation bleibt [Issue #22](https://github.com/Skanky0815/the-sara-protocol/issues/22).
+Der aktuelle Repository-Regelsatz verlangt keine Rust-Statuschecks. Falls diese später verpflichtend werden, darf ein auf Workflow-Ebene übersprungener Check reine Doku-/Frontend-PRs nicht blockieren: dafür zuerst einen immer ausgeführten Ergebnis-Job mit interner Änderungserkennung einführen oder die Pflichtcheck-Strategie entsprechend anpassen. Die Review-Pflicht bleibt unverändert.
+
+CI installiert `cargo-audit` in Version `0.22.2` als vorgebautes Release-Binary mit der auf einen Commit gepinnten `taiki-e/install-action`. Die SHA256-Prüfung bleibt aktiv; ein Fallback auf Quellcode-Kompilierung ist deaktiviert. Werkzeugversion und Action-Commit werden bei Updates gemeinsam geprüft. Die Version wird im Job ausgegeben. `cargo audit` lädt die aktuelle RustSec-Datenbank weiterhin selbst; Audit-Ergebnisse und Advisory-Datenbank werden nicht gecacht. Findings oder Download-/Prueffehler lassen den Job fehlschlagen.
 
 ## Containerbetrieb
 

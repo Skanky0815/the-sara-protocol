@@ -94,7 +94,13 @@ jobs:
         run: rustup toolchain install stable --profile minimal
       - name: Select stable Rust
         run: rustup default stable
-      - name: Install cargo-audit
-        run: cargo install cargo-audit --locked
+      - name: Install cargo-audit 0.22.2 (prebuilt)
+        uses: taiki-e/install-action@86f7a0ffb25f40114606501a311ebcfaf882ea32 # v2
+        with:
+          tool: cargo-audit@0.22.2
+          checksum: true
+          fallback: none
+      - name: Verify cargo-audit version
+        run: cargo audit --version
       - name: Audit dependency vulnerabilities
         run: cargo audit
