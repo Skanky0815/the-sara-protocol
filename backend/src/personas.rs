@@ -1,25 +1,29 @@
 use axum::{
     extract::{Path, State},
     http::{header, StatusCode},
-    routing::{get, post},
-    Json, Router,
+    Json,
 };
 use serde::{Deserialize, Serialize};
 use sqlx_core::row::Row;
 use sqlx_postgres::PgRow;
+use utoipa::ToSchema;
+use utoipa_axum::{router::OpenApiRouter, routes};
 
 use crate::{memories::AppState, telemetry};
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 #[serde(deny_unknown_fields)]
 pub struct CreatePersona {
+    /// Name wird außen getrimmt; danach 1 bis 200 Zeichen ohne Steuerzeichen.
     name: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct Persona {
+    #[schema(minimum = 1)]
     id: i64,
     name: String,
+    #[schema(format = DateTime)]
     created_at: String,
 }
 
@@ -31,12 +35,28 @@ fn persona(row: PgRow) -> Persona {
     }
 }
 
-pub fn routes() -> Router<AppState> {
-    Router::new()
-        .route("/personas", post(create))
-        .route("/personas/{id}", get(find))
+pub fn routes() -> OpenApiRouter<AppState> {
+    OpenApiRouter::new().routes(routes!(create, find))
 }
 
+/// Persona anlegen.
+///
+/// Namen werden vor der Validierung außen getrimmt. Das vorhandene Schema
+/// erzwingt eindeutige Namen; Namenskonflikte liefern 409 ohne Response-Body.
+#[utoipa::path(
+    post, path = "/personas", operation_id = "createPersona", tag = "Personas",
+    request_body = CreatePersona,
+    responses(
+        (status = 201, description = "Persona angelegt", body = Persona,
+            headers(("Location" = String, description = "Relativer Pfad zur neuen Persona"))),
+        (status = 400, description = "Ungültiges JSON (text/plain) oder ungültiger Name (leerer Body)", body = String, content_type = "text/plain"),
+        (status = 409, description = "Name bereits vorhanden; leerer Body"),
+        (status = 413, description = "Request-Body zu groß", body = String, content_type = "text/plain"),
+        (status = 415, description = "JSON-Content-Type fehlt oder ist nicht unterstützt", body = String, content_type = "text/plain"),
+        (status = 422, description = "Fehlendes, unbekanntes oder falsch typisiertes JSON-Feld", body = String, content_type = "text/plain"),
+        (status = 500, description = "Datenbankfehler; leerer Body")
+    )
+)]
 async fn create(
     State(state): State<AppState>,
     Json(input): Json<CreatePersona>,
@@ -70,6 +90,17 @@ async fn create(
     ))
 }
 
+/// Eine Persona gezielt per ID abrufen.
+#[utoipa::path(
+    get, path = "/personas/{id}", operation_id = "getPersona", tag = "Personas",
+    params(("id" = i64, Path, minimum = 1, description = "Positive Persona-ID")),
+    responses(
+        (status = 200, description = "Angefragte Persona", body = Persona),
+        (status = 400, description = "Ungültige ID (text/plain bei Pfadfehlern, sonst leer)", body = String, content_type = "text/plain"),
+        (status = 404, description = "Persona nicht gefunden; leerer Body"),
+        (status = 500, description = "Datenbankfehler; leerer Body")
+    )
+)]
 async fn find(
     State(state): State<AppState>,
     Path(id): Path<i64>,
