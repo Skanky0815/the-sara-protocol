@@ -1,6 +1,6 @@
 # The Sara Protocol
 
-Lokaler Persona- und Memory-Service mit Rust, Axum und PostgreSQL. Das Backend bietet `GET /health` sowie das Speichern und Abrufen persona-spezifischer Memories mit Provenienz. Weitere Persona-, Such-, World-State- und Client-Funktionen stehen auf der [Roadmap](docs/roadmap.md).
+Lokaler Persona- und Memory-Service mit Rust, Axum und PostgreSQL. Das Backend bietet `GET /health`, das Anlegen und Abrufen von Personas sowie persona-spezifische Memories mit Provenienz. Weitere Such-, World-State- und Client-Funktionen stehen auf der [Roadmap](docs/roadmap.md).
 
 ## Repository-Struktur
 
@@ -39,6 +39,7 @@ Die Konfiguration, Tests, SQLx-Migrationspfade und Container-Prüfungen beschrei
 ## Dokumentation
 
 - [Architektur und API-Planung](docs/architecture.md)
+- [Persona-API und Fehlerantworten](docs/persona-api.md)
 - [Architekturentscheidungen](docs/adr/README.md)
 - [Persona](docs/persona.md)
 - [Fiktionaler World-State mit Pixel](docs/world-state.md)

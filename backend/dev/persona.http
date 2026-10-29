@@ -7,6 +7,17 @@
 ### Health
 GET {{baseUrl}}/health
 
+### Create a persona (copy the returned id into @personaId above)
+POST {{baseUrl}}/personas
+Content-Type: application/json
+
+{
+  "name": "Example persona"
+}
+
+### Get this persona
+GET {{baseUrl}}/personas/{{personaId}}
+
 ### Create a confirmed memory (requires an existing persona)
 POST {{baseUrl}}/personas/{{personaId}}/memories
 Content-Type: application/json
