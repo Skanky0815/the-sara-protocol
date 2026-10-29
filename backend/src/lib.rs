@@ -1,5 +1,6 @@
 pub mod config;
 pub mod memories;
+pub mod telemetry;
 
 use axum::{routing::get, Json, Router};
 use memories::AppState;
@@ -16,11 +17,15 @@ async fn health() -> Json<HealthResponse> {
 }
 
 pub fn app() -> Router {
-    Router::new().route("/health", get(health))
+    telemetry::trace_requests(Router::new().route("/health", get(health)))
 }
 
 pub fn app_with_pool(pool: PgPool) -> Router {
-    app().merge(memories::routes().with_state(AppState { pool }))
+    telemetry::trace_requests(
+        Router::new()
+            .route("/health", get(health))
+            .merge(memories::routes().with_state(AppState { pool })),
+    )
 }
 
 #[cfg(test)]
