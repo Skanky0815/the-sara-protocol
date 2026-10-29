@@ -1,10 +1,21 @@
 use std::{env, net::IpAddr};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct Config {
     pub host: IpAddr,
     pub port: u16,
     pub database_url: String,
+}
+
+// Configuration can contain credentials; Debug must never expose them.
+impl std::fmt::Debug for Config {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Config")
+            .field("host", &self.host)
+            .field("port", &self.port)
+            .field("database_url", &"[REDACTED]")
+            .finish()
+    }
 }
 
 impl Config {

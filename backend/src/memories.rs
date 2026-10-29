@@ -96,6 +96,7 @@ async fn create_memory(
     .fetch_optional(&state.pool)
     .await
     .map_err(|err| {
+        crate::telemetry::database_error("create_memory", &err);
         if let sqlx_core::Error::Database(db) = &err {
             if db.code().as_deref() == Some("22007") || db.code().as_deref() == Some("22008") {
                 return StatusCode::BAD_REQUEST;
@@ -118,7 +119,10 @@ async fn list_memories(
         .bind(persona_id)
         .fetch_optional(&state.pool)
         .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|err| {
+            crate::telemetry::database_error("find_persona", &err);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
     if exists.is_none() {
         return Err(StatusCode::NOT_FOUND);
     }
@@ -131,7 +135,10 @@ async fn list_memories(
     .bind(persona_id)
     .fetch_all(&state.pool)
     .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    .map_err(|err| {
+        crate::telemetry::database_error("list_memories", &err);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
     Ok(Json(rows.into_iter().map(map_row).collect()))
 }
 

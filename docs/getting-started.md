@@ -101,3 +101,29 @@ Die Requests liegen jetzt unter [`backend/dev/persona.http`](../backend/dev/pers
 - `created_at` bleibt die Datenbank-Einfügezeit; `observed_at` beschreibt den Zeitpunkt des Quellereignisses.
 
 Einzelne API-Tests aus `backend/` ausführen, zum Beispiel `cargo test --locked --test memory_api unknown_persona_returns_not_found`, mit gesetzter `DATABASE_URL` wie oben. Die unabhängigen Tests verwenden jeweils eigene Personas und können parallel laufen.
+
+## Strukturiertes Logging
+
+Das Backend initialisiert beim Start genau einen `tracing-subscriber` und schreibt JSON-Zeilen nach stderr. Ohne `RUST_LOG` (oder bei leerem Wert) gilt `the_sara_protocol=info`. `.env` wird vorher geladen; exportierte Werte haben Vorrang. Ungültige Filter fallen mit einer Warnung ohne Wiedergabe des Eingabewerts auf den Standard zurück.
+
+```sh
+# Aus backend/:
+RUST_LOG=debug cargo run --locked
+RUST_LOG=the_sara_protocol=info,the_sara_protocol::memories=debug cargo run --locked
+# Aus dem Root, mit explizitem Filter im Container:
+docker compose run --rm --service-ports -e RUST_LOG=debug backend
+```
+
+Filter gelten innerhalb der Anwendungsziele `the_sara_protocol` und `the_sara_protocol::*`. Fremdbibliotheks-Logs werden bewusst auch bei globalem `debug` nicht ausgegeben, weil SQL-, Protokoll- oder Treiberdiagnosen sensible Inhalte enthalten können. SQLx-Statement-Logging wird bei der produktiven Pool-Erstellung zusätzlich deaktiviert. Modulspezifische Filter funktionieren; ein Debug-Filter erzeugt aber keine zusätzlichen Payload-Logs.
+
+Jeder HTTP-Request erhält einen `http.request`-Span mit prozesslokaler `request_id`, Methode und gematchter Routenvorlage. Unbekannte Routen heißen `<unmatched>`; konkrete Pfadparameter, URLs und Query-Strings werden nicht ausgegeben. Das Abschlussereignis enthält HTTP-Status und `duration_ms` bis zur Erstellung der Response-Header (nicht bis zum vollständigen Streamen des Bodys). Beispiel ohne Nutzdaten:
+
+```json
+{"level":"INFO","fields":{"message":"request completed","status":200,"duration_ms":0.12},"span":{"name":"http.request","request_id":1,"method":"GET","route":"/health"}}
+```
+
+Erfolgreiche Requests werden mit `INFO`, Clientfehler mit `WARN` und Serverfehler mit `ERROR` erfasst. Start, Datenbankverbindung, Migrationen und Listener erhalten eigene Phasenfelder. Datenbankfehler enthalten nur Operation und freigegebene `error_kind`-Kategorie (z. B. `pool_closed` oder `invalid_timestamp`), niemals rohe Fehlermeldungen, SQL oder Parameter. Request-Fehler lassen sich über denselben Span dem Abschluss zuordnen. Für vollständigen Request-Kontext den Standard-Info-Filter beibehalten; ein höherer Mindestlevel kann Info-Spans unterdrücken.
+
+Authorization-/Cookie-Header, Tokens, Passwörter, Verbindungs-URLs, Bodies und Persona-/Memory-Inhalte gehören nicht in Logs, auch nicht bei Debug. Konfigurations-Debugausgaben schwärzen die Datenbank-URL. Auf eine pauschale `instrument`-Aufzeichnung von Funktionsargumenten wird verzichtet. Die bestehenden öffentlichen API-Fehlerantworten ändern sich nicht.
+
+Die Tests in `backend/tests/logging.rs` erfassen echte JSON-Ausgaben und prüfen Filter, Request-Zuordnung, Status/Dauer, Start-/Datenbankfehler sowie das Ausbleiben von Test-Secrets. Die PostgreSQL-Fälle benötigen wie die übrigen Integrationstests eine dedizierte `DATABASE_URL`.

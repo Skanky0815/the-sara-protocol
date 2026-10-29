@@ -1,22 +1,67 @@
-use std::error::Error;
-use the_sara_protocol::config::Config;
+use std::process::ExitCode;
+use the_sara_protocol::{config::Config, telemetry};
 use tokio::net::TcpListener;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> ExitCode {
     // Existing environment variables take precedence over values in .env.
     dotenvy::dotenv().ok();
-    let config = Config::from_env()?;
-    let pool = sqlx_postgres::PgPool::connect(&config.database_url).await?;
-    let migrations =
-        sqlx_core::migrate::Migrator::new(std::path::Path::new("./migrations")).await?;
-    migrations.run(&pool).await?;
+    if telemetry::init().is_err() {
+        // The subscriber is unavailable; do not print potentially sensitive errors.
+        return ExitCode::FAILURE;
+    }
+    match run().await {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(()) => ExitCode::FAILURE,
+    }
+}
 
-    let address = (config.host, config.port);
-    let listener = TcpListener::bind(address).await?;
-    println!("Listening on http://{}:{}", config.host, config.port);
-    axum::serve(listener, the_sara_protocol::app_with_pool(pool)).await?;
-    Ok(())
+async fn run() -> Result<(), ()> {
+    tracing::info!(stage = "startup", "starting backend");
+    let config = Config::from_env().map_err(|reason| {
+        // Config returns fixed validation messages, never supplied values.
+        tracing::error!(stage = "config", error_kind = "invalid_config", %reason, "configuration rejected");
+    })?;
+    let pool = telemetry::connect_database(&config.database_url)
+        .await
+        .map_err(|_| ())?;
+    let migrations = sqlx_core::migrate::Migrator::new(std::path::Path::new("./migrations"))
+        .await
+        .map_err(|_| {
+            tracing::error!(
+                stage = "migration_load",
+                error_kind = "migration_load_failed",
+                "cannot load migrations"
+            );
+        })?;
+    migrations.run(&pool).await.map_err(|_| {
+        tracing::error!(
+            stage = "migration_apply",
+            error_kind = "migration_failed",
+            "cannot apply migrations"
+        );
+    })?;
+    tracing::info!(stage = "migrations", "migrations applied");
+
+    let listener = TcpListener::bind((config.host, config.port))
+        .await
+        .map_err(|_| {
+            tracing::error!(
+                stage = "http_bind",
+                error_kind = "bind_failed",
+                "cannot bind HTTP listener"
+            );
+        })?;
+    tracing::info!(stage = "http_listen", host = %config.host, port = config.port, "backend ready");
+    axum::serve(listener, the_sara_protocol::app_with_pool(pool))
+        .await
+        .map_err(|_| {
+            tracing::error!(
+                stage = "http_serve",
+                error_kind = "serve_failed",
+                "HTTP server stopped with an error"
+            );
+        })
 }
 
 #[cfg(test)]
