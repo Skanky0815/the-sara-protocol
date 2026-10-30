@@ -6,6 +6,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use sqlx_core::row::Row;
 use sqlx_postgres::{PgPool, PgRow};
+use time::{format_description::well_known::Rfc3339, OffsetDateTime, UtcOffset};
 use utoipa::ToSchema;
 use utoipa_axum::{router::OpenApiRouter, routes};
 
@@ -21,6 +22,8 @@ pub struct CreateMemory {
     pub content: String,
     /// Weder leer noch ausschließlich Whitespace; maximal 2000 UTF-8-Bytes.
     pub source: String,
+    /// RFC3339 mit Zeitzone, UTC-Jahr 0001–9999. Speicherung in UTC;
+    /// Nachkommastellen unterhalb einer Mikrosekunde werden abgeschnitten.
     #[schema(format = DateTime)]
     pub observed_at: String,
     pub confirmation_status: ConfirmationStatus,
@@ -58,15 +61,45 @@ pub struct Memory {
     pub confirmation_status: String,
 }
 
-fn map_row(row: PgRow) -> Memory {
-    Memory {
-        id: row.get("id"),
-        persona_id: row.get("persona_id"),
-        content: row.get("content"),
-        source: row.get("source"),
-        observed_at: row.get("observed_at"),
-        confirmation_status: row.get("confirmation_status"),
+fn normalize_observed_at(value: &str) -> Result<String, StatusCode> {
+    let parsed = OffsetDateTime::parse(value, &Rfc3339).map_err(|_| StatusCode::BAD_REQUEST)?;
+    let utc = parsed
+        .checked_to_offset(UtcOffset::UTC)
+        .ok_or(StatusCode::BAD_REQUEST)?;
+    if !(1..=9999).contains(&utc.year()) {
+        return Err(StatusCode::BAD_REQUEST);
     }
+    // Match PostgreSQL precision without rounding into the next second/year.
+    let utc = utc
+        .replace_nanosecond(utc.nanosecond() / 1_000 * 1_000)
+        .map_err(|_| StatusCode::BAD_REQUEST)?;
+    utc.format(&Rfc3339).map_err(|_| StatusCode::BAD_REQUEST)
+}
+
+fn map_row(row: PgRow) -> Result<Memory, StatusCode> {
+    let decode = || -> Result<Memory, sqlx_core::Error> {
+        Ok(Memory {
+            id: row.try_get("id")?,
+            persona_id: row.try_get("persona_id")?,
+            content: row.try_get("content")?,
+            source: row.try_get("source")?,
+            observed_at: row.try_get("observed_at")?,
+            confirmation_status: row.try_get("confirmation_status")?,
+        })
+    };
+    let memory = decode().map_err(|err| {
+        crate::telemetry::database_error("decode_memory", &err);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+    if normalize_observed_at(&memory.observed_at).is_err() {
+        tracing::error!(
+            operation = "decode_memory",
+            error_kind = "invalid_stored_timestamp",
+            "stored memory timestamp violates API contract"
+        );
+        return Err(StatusCode::INTERNAL_SERVER_ERROR);
+    }
+    Ok(memory)
 }
 
 fn valid_input(input: &CreateMemory) -> bool {
@@ -103,17 +136,21 @@ async fn create_memory(
     if persona_id <= 0 || !valid_input(&input) {
         return Err(StatusCode::BAD_REQUEST);
     }
+    let observed_at = normalize_observed_at(&input.observed_at)?;
     let row = sqlx_core::query::query(
         "INSERT INTO memories (persona_id, content, source, observed_at, confirmation_status)
          SELECT id, $2, $3, $4::timestamptz, $5 FROM personas WHERE id = $1
          RETURNING id, persona_id, content, source,
-                   to_char(observed_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS observed_at,
+                   CASE WHEN observed_at >= '0001-01-01T00:00:00Z'::timestamptz
+                             AND observed_at < '10000-01-01T00:00:00Z'::timestamptz
+                        THEN to_char(observed_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"')
+                   END AS observed_at,
                    confirmation_status",
     )
     .bind(persona_id)
     .bind(input.content)
     .bind(input.source)
-    .bind(input.observed_at)
+    .bind(observed_at)
     .bind(input.confirmation_status.as_str())
     .fetch_optional(&state.pool)
     .await
@@ -127,7 +164,7 @@ async fn create_memory(
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
     let row = row.ok_or(StatusCode::NOT_FOUND)?;
-    Ok((StatusCode::CREATED, Json(map_row(row))))
+    Ok((StatusCode::CREATED, Json(map_row(row)?)))
 }
 
 /// Memories einer Persona nach ID geordnet abrufen.
@@ -161,7 +198,10 @@ async fn list_memories(
     }
     let rows = sqlx_core::query::query(
         "SELECT id, persona_id, content, source,
-                to_char(observed_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS observed_at,
+                CASE WHEN observed_at >= '0001-01-01T00:00:00Z'::timestamptz
+                             AND observed_at < '10000-01-01T00:00:00Z'::timestamptz
+                        THEN to_char(observed_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"')
+                   END AS observed_at,
                 confirmation_status
          FROM memories WHERE persona_id = $1 ORDER BY id",
     )
@@ -172,7 +212,10 @@ async fn list_memories(
         crate::telemetry::database_error("list_memories", &err);
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
-    Ok(Json(rows.into_iter().map(map_row).collect()))
+    rows.into_iter()
+        .map(map_row)
+        .collect::<Result<Vec<_>, _>>()
+        .map(Json)
 }
 
 #[cfg(test)]
@@ -190,6 +233,44 @@ mod tests {
         input.content = " ".into();
         assert!(!valid_input(&input));
     }
+    #[test]
+    fn normalizes_rfc3339_offsets_and_truncates_submicroseconds() {
+        for (input, expected) in [
+            ("2026-10-30T16:00:00+01:00", "2026-10-30T15:00:00Z"),
+            (
+                "2026-10-30T15:00:00.123456789Z",
+                "2026-10-30T15:00:00.123456Z",
+            ),
+            (
+                "9999-12-31T23:59:59.999999999Z",
+                "9999-12-31T23:59:59.999999Z",
+            ),
+        ] {
+            assert_eq!(normalize_observed_at(input).unwrap(), expected);
+        }
+    }
+
+    #[test]
+    fn rejects_non_rfc3339_and_out_of_api_range_timestamps() {
+        for input in [
+            "2026-10-30",
+            "2026-10-30T15:00:00",
+            "now",
+            "tomorrow",
+            "infinity",
+            "-infinity",
+            "2026-02-29T00:00:00Z",
+            "0000-01-01T00:00:00Z",
+            "9999-12-31T23:59:59-01:00",
+        ] {
+            assert_eq!(
+                normalize_observed_at(input),
+                Err(StatusCode::BAD_REQUEST),
+                "{input}"
+            );
+        }
+    }
+
     #[test]
     fn status_serializes_as_expected() {
         assert_eq!(
