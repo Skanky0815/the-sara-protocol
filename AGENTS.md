@@ -6,6 +6,10 @@ Prefer small, testable changes. Use Rust, Axum, Tokio, SQLx, PostgreSQL/JSONB. K
 
 Record significant decisions in docs/adr/ using the template and index. Omit attribution trailers such as `AI-assisted-by` from commit messages by default, as requested by Rico; this supersedes the trailer convention proposed in ADR 0003. Keep contribution descriptions and Git author/committer identities truthful. Do not claim a separate AI GitHub identity unless one is actually configured.
 
+## Prefer established tooling
+
+Before implementing GitHub Actions, CI/CD, release automation, or similar infrastructure, evaluate established standards and maintained tools against the actual requirements. Prefer configuring suitable existing tools over writing equivalent custom logic. Record the alternatives, remaining gaps, maintenance implications, and reason for any custom code. Verify relevant behavior using primary documentation and a focused proof where practical; popularity alone is not sufficient.
+
 ## Pull request traceability
 
 Every implementation pull request must reference its related GitHub issue in the PR body (`Refs #N` for a non-closing or intermediate PR; `Closes #N` only when merging into the default branch should complete that issue). Include the issue link in the PR description and keep it updated if the scope changes. Never use an auto-closing keyword when the work is not complete.
