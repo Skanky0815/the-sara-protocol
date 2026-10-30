@@ -36,6 +36,10 @@ Alternativ startet `docker compose up --build -d --wait` aus dem Root das Backen
 
 Die Konfiguration, Tests, SQLx-Migrationspfade und Container-Prüfungen beschreibt die [Entwicklungsanleitung](docs/getting-started.md).
 
+## Abnahme mit vorgebautem Image
+
+Die [Release- und Abnahmeanleitung](docs/releases.md#abnahme-ohne-lokalen-build) beschreibt den Start über `compose.acceptance.yaml` mit einem GHCR-Digest, ohne lokalen Build. Commit-Images werden nach erfolgreicher main-QA erzeugt; ein veröffentlichter Image-Digest muss bereits vorliegen.
+
 ## Beiträge
 
 [Beitragsrichtlinien und Projektsprache](CONTRIBUTING.md) beschreiben Sprache, Issue-Verweise und Validierung.

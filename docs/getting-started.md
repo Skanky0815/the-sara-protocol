@@ -141,3 +141,7 @@ MIGRATIONS_DIR=/opt/sara/backend/migrations /opt/sara/bin/the-sara-protocol
 ```
 
 Das Deployment muss sämtliche versionierten SQL-Dateien aus `backend/migrations/` mit ausliefern. Der Container setzt `MIGRATIONS_DIR=/app/backend/migrations` und funktioniert dadurch auch bei überschriebenem Arbeitsverzeichnis. Bei einem anderen Mount-Pfad die Variable entsprechend überschreiben. Es gibt keinen separaten Migrationsjob: Laden und Anwenden erfolgen vor Öffnen des HTTP-Ports. Fehlende, unlesbare oder ungültige Migrationen bzw. fehlgeschlagene Anwendungen beenden den Prozess mit Fehlerstatus und strukturiertem Fehlerereignis. Details und Verbindungsdaten werden nicht protokolliert. Siehe [ADR 0007](adr/0007-configurable-migrations.md).
+
+## Vorgebaute Abnahmeimages
+
+Für die Abnahme ohne lokale Rust-Toolchain oder Image-Build die eigenständige `compose.acceptance.yaml` verwenden. Image-Digest, GHCR-Zugriff, isoliertes Datenbankvolume und Start-/Neustartbefehle beschreibt die [Release-Anleitung](releases.md#abnahme-ohne-lokalen-build). Die bisherige `compose.yaml` bleibt für lokale Entwicklung mit Build erhalten.

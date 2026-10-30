@@ -1,0 +1,28 @@
+# Eigenständige Abnahme: kein build, kein Quellcode-Mount.
+services:
+  backend:
+    image: ${BACKEND_IMAGE:?BACKEND_IMAGE auf ein CI-Image oder dessen Digest setzen}
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3000
+      DATABASE_URL: postgres://sara:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD lokal setzen}@postgres:5432/sara
+    ports:
+      - "127.0.0.1:${BACKEND_PORT:-53043}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: sara
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD lokal setzen}
+      POSTGRES_DB: sara
+    volumes:
+      - acceptance_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U sara -d sara"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+volumes:
+  acceptance_postgres:

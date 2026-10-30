@@ -1,0 +1,21 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "separate-pull-requests": true,
+  "include-component-in-tag": true,
+  "include-v-in-tag": true,
+  "tag-separator": "/",
+  "bump-minor-pre-major": true,
+  "bump-patch-for-minor-pre-major": true,
+  "pull-request-header": "Bewusst vorbereiteter Komponentenrelease. Versionsvorschlag, Changelog und QA prüfen; kein automatischer Merge.",
+  "pull-request-footer": "Refs #44\nhttps://github.com/Skanky0815/the-sara-protocol/issues/44\n\nVor dem ersten Release muss Abnahme #43 abgeschlossen sein.",
+  "changelog-sections": [
+    { "type": "feat", "section": "Funktionen" },
+    { "type": "fix", "section": "Fehlerkorrekturen" },
+    { "type": "perf", "section": "Leistung" },
+    { "type": "deps", "section": "Abhängigkeiten" },
+    { "type": "docs", "section": "Dokumentation" }
+  ],
+  "packages": {
+    "backend": { "release-type": "rust", "component": "backend", "initial-version": "0.1.0" }
+  }
+}

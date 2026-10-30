@@ -6,12 +6,18 @@ on:
       - '.github/workflows/**'
       - '.github/scripts/**'
       - '.github/tests/**'
+      - '.github/release/**'
+      - 'release-please-config.json'
+      - '.release-please-manifest.json'
   push:
     branches: [main]
     paths:
       - '.github/workflows/**'
       - '.github/scripts/**'
       - '.github/tests/**'
+      - '.github/release/**'
+      - 'release-please-config.json'
+      - '.release-please-manifest.json'
 
 permissions:
   contents: read
@@ -32,3 +38,11 @@ jobs:
         run: python -m pip install pytest==8.3.5
       - name: Unit tests
         run: python -m pytest -q .github/tests
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Release-Integration und Standard-Updater prüfen
+        working-directory: .github/release
+        run: |
+          npm ci --ignore-scripts
+          npm test
