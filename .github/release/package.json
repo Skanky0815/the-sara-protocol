@@ -1,0 +1,9 @@
+{
+  "name": "sara-release-integration",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Projektspezifische QA-Grenzen um Release Please",
+  "engines": { "node": ">=24" },
+  "scripts": { "test": "node --test *.test.cjs" },
+  "dependencies": { "release-please": "17.6.0" }
+}

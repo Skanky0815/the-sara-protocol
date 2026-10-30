@@ -1,54 +1,85 @@
-# Versionierung und Releases
+# Versionierung, Abnahmeimages und Releases
 
-## Komponenten und öffentliche Schnittstellen
+## Werkzeug und Versionsregeln
 
-Backend und künftiges Frontend werden unabhängig versioniert. Die Backend-Version steht in `backend/Cargo.toml`; der lokale Paketeintrag in `backend/Cargo.lock` muss übereinstimmen. Änderungen stehen in [backend/CHANGELOG.md](../backend/CHANGELOG.md). Das spätere Frontend verwendet sein eigenes `frontend/package.json`, seinen Paket-Lockfile und `frontend/CHANGELOG.md`. Diese Dateien werden erst mit dem echten Frontend angelegt.
+Wir verwenden **Release Please 17.6.0**, fest im [npm-Lockfile](../.github/release/package-lock.json) gebunden. Das Werkzeug erstellt Versions-PRs, aktualisiert Rust-Manifeste und Lockfiles, erzeugt Changelogs und übernimmt die GitHub-Release-Erstellung. Die kleine [Integration](../.github/release/release.cjs) ergänzt nur unsere QA-/Abnahmegrenzen und Zuordnungen; sie enthält keine eigene Versionsarithmetik oder Datei-Updater. Der [Werkzeugvergleich](release-tooling-evaluation.md) begründet die Auswahl.
 
-Tags heißen `backend/vX.Y.Z` bzw. später `frontend/vX.Y.Z`; gleichnamige Komponentenversionen sind unabhängig. Es gibt keine gemeinsame Produktversion und keinen globalen „Latest“-Release. Öffentliche Backend-Schnittstellen umfassen HTTP-Vertrag, dokumentierte Konfiguration und Betriebsanforderungen. Datenbankmigrationen und Kompatibilität bereits gespeicherter Daten werden bei Änderungen ausdrücklich bewertet.
+Backend und künftiges Frontend haben eigene Versionen, Changelogs und Tags. Backend: `backend/Cargo.toml`, `backend/Cargo.lock`, `backend/CHANGELOG.md`; später Frontend: `frontend/package.json`, Paket-Lockfile und `frontend/CHANGELOG.md`. Die [Konfiguration](../release-please-config.json) registriert derzeit ausschließlich `backend` mit der Rust-Strategie. Das [Versionsmanifest](../.release-please-manifest.json) beginnt leer, weil noch kein Release veröffentlicht wurde; Release Please aktualisiert es im Versions-PR. Frontend wird erst ergänzt, wenn dessen echte Quellen und QA vorliegen.
 
-Vor `1.0.0` erhöht eine inkompatible Änderung die Minor-Version; kompatible Ergänzungen und Fehlerkorrekturen erhöhen die Patch-Version. `major` dient dem bewusst gewählten Übergang zur stabilen Schnittstelle `1.0.0`. Danach gelten die regulären Regeln: inkompatibel → Major, kompatible Ergänzung → Minor, Fehlerkorrektur → Patch. Die Auswahl ist eine Review-Entscheidung; die Automation kann API-Kompatibilität nicht zuverlässig selbst beurteilen. Vorabversionen werden zunächst nicht automatisiert unterstützt und als Eingabe abgewiesen.
+Die Versionsvorschläge folgen **Conventional Commits**. Vor `1.0.0` erhöht eine inkompatible Änderung (`feat!:`/`BREAKING CHANGE:`) die Minor-Version; kompatible Funktionen (`feat:`) und Fehlerkorrekturen (`fix:`) erhöhen die Patch-Version. Ab `1.0.0` gelten die regulären SemVer-Regeln. Die öffentliche Backend-Schnittstelle umfasst HTTP-Vertrag, dokumentierte Konfiguration und Betriebsanforderungen. Kompatibilität bestehender Daten muss im Review beurteilt werden; kein Versionswerkzeug kann das vollständig automatisch erkennen.
 
-`0.1.0` in Cargo ist bislang eine Entwicklungsversion, kein bereits veröffentlichter Release. Der erste Release verwendet `initial`, behält die Paketversion bei und veröffentlicht erst nach der abgeschlossenen Abnahme in [#43](https://github.com/Skanky0815/the-sara-protocol/issues/43).
+Tags heißen `backend/vX.Y.Z`, später `frontend/vX.Y.Z`. Der erste Release ist `backend/v0.1.0`. Vorabversionen sind derzeit nicht freigeschaltet. Es gibt keine gemeinsame Backend-/Frontend-Version. Für bewusst abweichende Versionsvorschläge die [Release-As-Konvention von Release Please](https://github.com/googleapis/release-please#how-do-i-change-the-version-number) verwenden und im Versions-PR prüfen; keinen zweiten Versionsrechner einführen.
 
-## Einrichtung
+## Einrichtung und Rechte
 
-Die Workflows müssen zunächst per normalem PR nach `main` gelangen. Unter **Settings → Actions → General → Workflow permissions** muss **Allow GitHub Actions to create and approve pull requests** aktiviert sein, damit der eingebaute `GITHUB_TOKEN` Versions-PRs erstellen darf. Diese Repository-Einstellung wird durch die Implementierung nicht verändert. Die Automation erstellt keine Reviews und genehmigt oder mergt keine PRs. Die Standardberechtigung kann weiterhin lesend bleiben; Schreibrechte werden nur den jeweiligen Jobs erteilt.
+Die Workflows müssen regulär nach main gemergt sein. **Settings → Actions → General → Workflow permissions → Allow GitHub Actions to create and approve pull requests** muss bewusst freigegeben werden, damit GITHUB_TOKEN Versions-PRs erstellen darf. Diese Einstellung wurde nicht automatisch geändert. Die Integration gibt keine Reviews ab und mergt keine PRs. Standard-Tokenrechte können lesend bleiben.
 
-`Prepare component release` benötigt `contents: write`, `pull-requests: write` und `actions: write` für Release-Branch, PR und ausdrücklichen QA-Start. `Publish component release` erhält `contents: write` für Tag/Release und Leserechte für Actions, PRs und Issues. Kein persönlicher Token und keine weiteren Secrets sind nötig. Tag-Regelsätze müssen die reguläre Erstellung des vorgesehenen Tags zulassen; die Automation umgeht keine Regeln. Eine fehlende Berechtigung führt zum Abbruch.
+Die Vorbereitungs-Action erhält Schreibrechte auf Inhalte, Issues und PRs sowie Actions-Rechte für einen ausdrücklichen QA-Dispatch. Der Image-Job erhält nur Inhaltslese- und Paket-Schreibrechte. Der separate Release-Job benötigt Inhalts-, Issue-, PR- und Paket-Schreibrechte sowie Actions-Leserechte. Nur erfolgreiche main-Push-QA aus diesem Repository darf ihn auslösen. Es werden keine PR-Artefakte geladen, keine PR-Caches im privilegierten Job verwendet und keine Zugangsdaten im Checkout gespeichert. Docker-/npm-Downloads stammen aus den konfigurierten Werkzeugen; npm-Lifecycle-Skripte sind bei der Installation deaktiviert.
 
-## Bedienung
+GHCR muss Actions die Erstellung bzw. Aktualisierung von `ghcr.io/skanky0815/the-sara-protocol-backend` erlauben. Bestehende Pakete benötigen gegebenenfalls expliziten Repository-Zugriff. Paket-Sichtbarkeit separat prüfen: ein öffentliches Repository macht ein neu angelegtes GHCR-Paket nicht zwangsläufig öffentlich. Keine Sichtbarkeits- oder Schutzregel wird automatisch geändert.
 
-1. Änderungen unter `## [Unveröffentlicht]` im Backend-Changelog sammeln. Der Abschnitt muss aussagekräftige Release-Notizen enthalten.
-2. In Actions **Prepare component release → Run workflow**, Branch **main**, Komponente **backend**, Sprung **initial/patch/minor/major** wählen. Der erste Release benutzt **initial**. Weitere Sprünge setzen den veröffentlichten Vorgänger-Release in der main-Historie voraus; `patch` kann die erste Abnahme nicht umgehen. Diese Handlung ist der bewusste Release-Auftrag.
-3. Die Action erzeugt ausschließlich Manifest-/Lockfile-Version und Changelog auf `release/backend/vX.Y.Z` und erstellt einen PR mit Bezug zu #44. Für `initial` ändert sich nur das Changelog. Es gibt keinen direkten Push auf main und keinen automatischen Merge.
-4. Rust-QA wird auf dem Release-Branch ausdrücklich per `workflow_dispatch` gestartet. Auf diesen Lauf und die richtige Head-SHA achten. Bei zusätzlich angezeigten, genehmigungspflichtigen PR-Workflows diese über die normale GitHub-Oberfläche freigeben. Review und Branch-Schutz bleiben verbindlich.
-5. Versions-PR prüfen und regulär squashen oder rebasen. Nach dem Merge läuft Rust-QA erneut auf main. Erst ein erfolgreicher Lauf für genau diesen Merge-Commit löst die Veröffentlichung aus.
-6. Der veröffentlichte Tag zeigt auf den tatsächlich gemergten Commit, nicht auf den vorherigen Feature-Branch oder den inzwischen weitergelaufenen main. Der GitHub Release enthält die Notizen der Komponente. Es werden keine Pakete, Images oder Deployments veröffentlicht.
+## Bewusster Versions-PR
 
-Frontend-Auswahl wird vor jeglicher Änderung zurückgewiesen. Erst mit Implementierung der Frontend-Versionierung, Lockfile-Behandlung und eigenen QA darf diese Komponente freigeschaltet werden.
+1. In **Actions → Prepare component release → Run workflow** den Branch **main** und **backend** wählen. Das ist der bewusste Vorbereitungsauftrag; normale Pushes erstellen keinen Versions-PR.
+2. Release Please berechnet den Vorschlag aus Komponenten-Commits und erstellt bzw. aktualisiert seinen Versions-PR. Manifest, Lockfile, Changelog und Versionsmanifest gemeinsam prüfen. Ein identischer Auftrag erzeugt keine unabhängigen doppelten Versions-PRs.
+3. Die Integration weist den PR `Sara-Pixel42` zu, fordert `Skanky0815` zum Review auf, ergänzt den direkten Branch-Link in #44 und startet Rust-QA per `workflow_dispatch` auf dem Release-Branch. Release Please erzeugt den Branch selbst; eine native Issue-Branch-Verknüpfung wird dabei nicht behauptet.
+4. Falls GitHub zusätzlich genehmigungspflichtige bot-erzeugte PR-Workflows anzeigt, diese normal freigeben. Vor dem Merge den QA-Lauf für die tatsächliche Head-SHA kontrollieren. Die Repo-Schutzregeln bleiben verbindlich; kein automatischer Merge.
+5. Nach regulärem Merge durchläuft genau der main-Commit Rust-QA, Containerprüfung, Image-Bereitstellung und erst dann gegebenenfalls die Release-Freigabe.
 
-## Prüfungen und Wiederholung
+Frontend wird nicht vorbereitet; die Workflow-Auswahl führt ohne vorhandene Implementierung zu keinem Job. Bei fehlgeschlagenem Review-/QA-Handoff den bestehenden PR prüfen und `Prepare component release` erneut starten. Bei unverändertem PR meldet Release Please gegebenenfalls keine Aktualisierung; dann die Review-Anforderung und **Rust QA → Run workflow** auf dem bestehenden Release-Branch manuell nachholen. Ein erneuter Vorbereitungsauftrag kann den PR aktualisieren und damit ein neues Approval notwendig machen.
 
-Die Veröffentlichung akzeptiert ausschließlich erfolgreiche `push`-Läufe des echten Rust-QA-Workflows auf main aus diesem Repository. Sie prüft die vier Jobs **Format**, **Clippy**, **Tests (PostgreSQL)** und **Dependency audit**, einen zu diesem Commit gemergten Versions-PR, dessen Release-Markierung und Dateiumfang sowie die exakte Versions-/Changelog-Änderung gegenüber dem direkten Elterncommit. Die Privilegien des `workflow_run`-Jobs werden nie für PR-Checkouts, fremde Repositorys, heruntergeladene Artefakte oder Caches verwendet.
+## Abnahme ohne lokalen Build
 
-Ein vorhandener Release-Branch oder Tag blockiert einen weiteren Vorbereitungsauftrag; es wird weder überschrieben noch ein zweiter Versions-PR erzeugt. Bei einem Abbruch nach Branch-Erstellung den existierenden Branch prüfen und gegebenenfalls den fehlenden PR manuell anlegen. Release-Markierung und Standardbeschreibung müssen erhalten bleiben; keine zusätzlichen Dateien in einen Versions-PR aufnehmen. Wenn der QA-Dispatch fehlschlägt, Rust QA über **Run workflow** auf diesem Branch starten. Beispiel:
+Nach erfolgreicher main-QA baut **Backend delivery** mit offiziellen Docker-Actions ein Image für `linux/amd64` und `linux/arm64`. Auf dem nativen amd64-Runner wird der Container zunächst isoliert gestartet und neu gestartet. Nach dem Multiarch-Push wird auch der tatsächliche Registry-Digest gezogen und erneut gestartet. ARM64 wird gebaut; ein ARM64-Laufzeittest erfolgt bei der Abnahme auf dem entsprechenden Rechner. QEMU-Builds können länger dauern.
+
+Commit-Images heißen `ghcr.io/skanky0815/the-sara-protocol-backend:sha-<vollständige Commit-SHA>`. Ein vorhandenes Commit-Image wird wiederverwendet. Der Workflow gibt im Job-Summary die genaue Referenz `ghcr.io/...@sha256:...` aus. **Für die Abnahme diesen Digest verwenden**, da Tags grundsätzlich Registry-Referenzen sind. Commit-Images sind noch keine stabilen Releases und benötigen nicht die bereits abgeschlossene Abnahme; sonst könnte die erste Abnahme nicht stattfinden.
+
+Das CI-Image muss einmal erzeugt sein, bevor die folgenden Befehle funktionieren. Die Datei [compose.acceptance.yaml](../compose.acceptance.yaml) enthält ausdrücklich keinen Build-Kontext und mountet keinen Quellcode. Sie benötigt auf dem Abnahmerechner nur Docker Compose, keinen Rust-Compiler:
 
 ```sh
-gh workflow run rust-qa.yml --ref release/backend/v0.1.0
+# Aus einem Checkout der passenden Dokumentation/Compose-Datei:
+export BACKEND_IMAGE=ghcr.io/skanky0815/the-sara-protocol-backend@sha256:DEIN_DIGEST
+# Lokal einen eigenen URL-sicheren Wert verwenden (z. B. zufällige Hex-Zeichen).
+export POSTGRES_PASSWORD=DEIN_LOKALER_HEX_WERT
+export BACKEND_PORT=53043
+
+docker compose -p sara-acceptance -f compose.acceptance.yaml pull
+docker compose -p sara-acceptance -f compose.acceptance.yaml up --no-build -d --wait
+curl --fail http://127.0.0.1:53043/health
+curl --fail http://127.0.0.1:53043/openapi.json
 ```
 
-Wird der Versions-PR durch main-Änderungen veraltet, ihn normal aktualisieren, erneut prüfen und nötigenfalls erneut approven. Hat sich dabei die Komponentenversion geändert, den überholten Auftrag schließen und einen neuen vorbereiten. Bei einem reinen Rebase bleibt der bewusste Release-Auftrag bestehen.
+Bei privatem Paket zuvor mit einem für Paketlesen berechtigten Konto bei `ghcr.io` anmelden, Zugangsdaten ausschließlich über `docker login --password-stdin` oder den lokalen Credential-Store verwenden. Keine Tokens in Befehlsargumente, Compose-Dateien oder Git eintragen. Im Job-Token sind Paket-Schreibrechte ausreichend; auf dem lokalen Abnahmerechner genügen Leserechte. Die Beispielpasswörter und Loopback-Ports sind für die lokale Abnahme, kein öffentliches Produktionsdeployment mit Authentifizierung/TLS.
 
-Nach erfolgreicher Veröffentlichung ist eine Wiederholung ohne zusätzliche Schreiboperationen möglich. Existiert nach einem Teilfehler bereits der korrekte Tag, wird nur der fehlende Release ergänzt. Ein Tag auf einem anderen Commit wird niemals verschoben. Bei offenen Abnahmekriterien für `0.1.0` wird vor der Tag-Erstellung abgebrochen. Nach Schließen von #43 oder Beheben vorübergehender Berechtigungs-/API-Fehler den ursprünglichen Rust-QA-Lauf des Merge-Commits erneut ausführen; dadurch wird die Veröffentlichung erneut geprüft. Keine Tags manuell auf main „nachziehen“.
+PostgreSQL ist nur im Compose-Netz erreichbar und erhält ein eigenes Volume unter dem Projekt `sara-acceptance`. Für einen Neustart und den Persistenznachweis:
 
-## Validierung und noch notwendiger Betriebsnachweis
+```sh
+docker compose -p sara-acceptance -f compose.acceptance.yaml restart backend
+docker compose -p sara-acceptance -f compose.acceptance.yaml up --no-build -d --wait
+# Zuvor angelegte Test-Persona/Memories erneut per API abrufen.
+docker compose -p sara-acceptance -f compose.acceptance.yaml down
+```
 
-Lokal und in Workflow validation werden Versions-/Changelog-Planung, Ablehnungen, simulierte GitHub-API-Abläufe, QA-Dispatch, Veröffentlichung und Wiederholung getestet. Die echte Backend-Manifest-/Lockfile-Struktur ist einbezogen. `actionlint` prüft die Workflows.
+`down` behält die Daten. Nur für ausdrücklich entbehrliche Abnahmedaten löscht `down --volumes` das eigene Abnahmevolume. Der vollständige fachliche Nachweis (Persona, Provenienz, Isolation und Persistenz) gehört zu #43; die automatisierte Image-Prüfung ersetzt diese Abnahme nicht. Der absolute Migrationspfad im Image funktioniert unabhängig vom lokalen Arbeitsverzeichnis.
 
-Die erstmalige tatsächliche Erstellung eines Versions-PRs und der QA-Start mit `GITHUB_TOKEN` können erst nach Merge der Workflows und Freigabe der Repository-Einstellung nachgewiesen werden. Diesen Betriebsnachweis in #44 festhalten; lokale Simulationen ersetzen ihn nicht. Bis zum bewussten ersten Release-Auftrag werden weder Tag noch Release erstellt. Die Abnahme #43 muss vor der ersten Veröffentlichung abgeschlossen sein.
+## Versionierte Veröffentlichung
 
-## Quellen
+Eine Veröffentlichung erfordert einen von Release Please erkannten gemergten Backend-Versions-PR für **genau den erfolgreichen QA-Commit**. Die Integration prüft den echten QA-Workflow, dessen vier erfolgreichen Jobs, main-Historie, PR-Dateiumfang und Versionskonsistenz zwischen Cargo und Release-Manifest. #43 muss geschlossen sein. Ohne Kandidaten entsteht nur das Commit-Abnahmeimage.
 
-- [Semantic Versioning 2.0.0](https://semver.org/lang/de/)
-- [GitHub: Workflows aus anderen Workflows auslösen](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow) — `workflow_dispatch` startet auch mit `GITHUB_TOKEN` einen Lauf; bot-erzeugte PR-Ereignisse können zusätzliche Freigabe erfordern.
-- [GitHub: workflow_run und dessen Sicherheitsgrenzen](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#workflow_run)
+Vor dem GitHub Release wird der bereits bereitgestellte Digest als Image-Tag `:X.Y.Z` übernommen. Es erfolgt kein erneuter Release-Build. Ein vorhandener Versionstag muss denselben Digest haben, andernfalls bricht der Job ab. Erst danach erstellt Release Please über seine Standardbibliothek den GitHub Release samt Git-Tag für diesen Commit und markiert den PR als veröffentlicht. Existierende Git-Tags auf anderen Commits werden nicht überschrieben. Es gibt kein `latest`-Image und kein Cargo-/npm-Publishing.
+
+Bei einem Teilfehler denselben ursprünglichen Rust-QA-main-Lauf erneut ausführen. Dadurch werden vorhandene Commit-Images wiederverwendet und die Release-Prüfung erneut gestartet. Ein bereits erzeugter korrekter Release wird nicht dupliziert. Später weitergelaufenes main ersetzt niemals die SHA des ursprünglichen Auftrags. Fehlende Berechtigungen, GHCR-Fehler oder offene Abnahme führen zum Abbruch, nicht zu einer Umgehung.
+
+## Validierung und verbleibender Betriebsnachweis
+
+Workflow validation führt `actionlint`, bestehende Python-Tests sowie Node-Tests für unsere QA-Grenzen und die tatsächlichen Release-Please-Updater mit den echten Cargo-Dateien aus. **Backend image check** baut PR-Images und testet Containerstart/Neustart ohne Registry-Schreibrechte. Die Release-Please-Konfiguration wurde mit der vereinbarten 0.x-Regel geprüft.
+
+Der echte GITHUB_TOKEN-Versions-PR, dessen QA-Dispatch, die erste GHCR-Multiarch-Veröffentlichung und der Pull auf dem Abnahmerechner können erst nach Workflow-Merge und den erforderlichen Berechtigungen nachgewiesen werden. #44 und #47 bleiben bis zu diesen Nachweisen offen. Dieser Implementierungs-PR erzeugt weder einen Release noch einen Tag oder ein GHCR-Image.
+
+## Primärquellen
+
+- [Release Please: Manifest-Modus](https://github.com/googleapis/release-please/blob/main/docs/manifest-releaser.md)
+- [Rust-Strategie und Cargo-Lockfile-Updater](https://github.com/googleapis/release-please/blob/main/src/strategies/rust.ts)
+- [GitHub: GITHUB_TOKEN und Workflow-Auslöser](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow)
+- [Docker: Multiarch-Builds in GitHub Actions](https://docs.docker.com/build/ci/github-actions/multi-platform/)
+- [GitHub: Images in GHCR veröffentlichen](https://docs.github.com/en/actions/tutorials/publish-packages/publish-docker-images)

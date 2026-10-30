@@ -1,0 +1,138 @@
+name: Backend delivery
+on:
+  workflow_run:
+    workflows: [Rust QA]
+    types: [completed]
+    branches: [main]
+permissions: {}
+concurrency:
+  group: backend-delivery-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
+jobs:
+  image:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.ref.outputs.image }}
+      digest: ${{ steps.ref.outputs.digest || steps.push.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
+        with:
+          context: backend
+          load: true
+          tags: sara-backend:smoke
+          cache-from: type=gha,scope=backend-main-smoke
+          cache-to: type=gha,mode=max,scope=backend-main-smoke
+      - run: docker pull postgres:17
+      - name: Isolierter Containerstart vor Veröffentlichung
+        env:
+          BACKEND_IMAGE: sara-backend:smoke
+        run: .github/scripts/container-smoke.sh
+      - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - name: Vorhandenes Commit-Image prüfen
+        id: ref
+        env:
+          REPOSITORY: ${{ github.repository }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          image="ghcr.io/${REPOSITORY,,}-backend"
+          digest=$(.github/scripts/image-ref.sh "$image:sha-$SHA")
+          echo "image=$image" >> "$GITHUB_OUTPUT"
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4
+        if: steps.ref.outputs.digest == ''
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
+        id: push
+        if: steps.ref.outputs.digest == ''
+        with:
+          context: backend
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.ref.outputs.image }}:sha-${{ github.event.workflow_run.head_sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.event.workflow_run.head_sha }}
+          cache-from: type=gha,scope=backend-multiarch
+          cache-to: type=gha,mode=max,scope=backend-multiarch
+      - name: Veröffentlichten Digest starten und prüfen
+        env:
+          IMAGE: ${{ steps.ref.outputs.image }}
+          DIGEST: ${{ steps.ref.outputs.digest || steps.push.outputs.digest }}
+        run: |
+          docker pull "$IMAGE@$DIGEST"
+          BACKEND_IMAGE="$IMAGE@$DIGEST" .github/scripts/container-smoke.sh
+      - name: Image-Referenz für Abnahme ausgeben
+        env:
+          IMAGE: ${{ steps.ref.outputs.image }}
+          DIGEST: ${{ steps.ref.outputs.digest || steps.push.outputs.digest }}
+        run: echo "BACKEND_IMAGE=$IMAGE@$DIGEST" >> "$GITHUB_STEP_SUMMARY"
+  release:
+    needs: image
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      actions: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts
+        working-directory: .github/release
+      - name: Release-Kandidat für genau diesen QA-Commit prüfen
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node .github/release/release.cjs plan
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
+        if: steps.plan.outputs.version != ''
+      - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4
+        if: steps.plan.outputs.version != ''
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - name: Geprüften Digest als Release-Image übernehmen
+        if: steps.plan.outputs.version != ''
+        env:
+          IMAGE: ${{ needs.image.outputs.image }}
+          DIGEST: ${{ needs.image.outputs.digest }}
+          VERSION: ${{ steps.plan.outputs.version }}
+        run: |
+          existing=$(.github/scripts/image-ref.sh "$IMAGE:$VERSION")
+          if [ -n "$existing" ]; then
+            test "$existing" = "$DIGEST"
+          else
+            docker buildx imagetools create --tag "$IMAGE:$VERSION" "$IMAGE@$DIGEST"
+          fi
+          test "$(.github/scripts/image-ref.sh "$IMAGE:$VERSION")" = "$DIGEST"
+      - name: Release Please – GitHub Release und Tag
+        if: steps.plan.outputs.version != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PROMOTED_SHA: ${{ steps.plan.outputs.sha }}
+        run: node .github/release/release.cjs publish

@@ -6,11 +6,25 @@ on:
     paths:
       - 'backend/**'
       - '.github/workflows/rust-qa.yml'
+      - '.github/release/**'
+      - '.github/workflows/backend-*.yml'
+      - '.github/scripts/container-smoke.sh'
+      - '.github/scripts/image-ref.sh'
+      - 'compose.acceptance.yaml'
+      - 'release-please-config.json'
+      - '.release-please-manifest.json'
   push:
     branches: [main]
     paths:
       - 'backend/**'
       - '.github/workflows/rust-qa.yml'
+      - '.github/release/**'
+      - '.github/workflows/backend-*.yml'
+      - '.github/scripts/container-smoke.sh'
+      - '.github/scripts/image-ref.sh'
+      - 'compose.acceptance.yaml'
+      - 'release-please-config.json'
+      - '.release-please-manifest.json'
 
 permissions:
   contents: read

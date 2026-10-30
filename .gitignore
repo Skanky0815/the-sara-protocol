@@ -5,3 +5,5 @@
 # Lokale Python-Tests der GitHub-Automatisierung
 __pycache__/
 .pytest_cache/
+
+node_modules/

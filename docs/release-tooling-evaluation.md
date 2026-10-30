@@ -4,7 +4,7 @@ Stand: 2026-10-30 · Issue #44 · PR #46
 
 ## Ergebnis
 
-**Empfehlung: Release Please im Manifest-Modus.** Die bisherige Eigenimplementierung in PR #46 soll vor einem Merge ersetzt werden. Versionsberechnung, Dateiaktualisierung, Changelog, Release-PR und Release-Verwaltung werden von dem etablierten Werkzeug übernommen. Eigene Logik bleibt auf projektspezifische Grenzen beschränkt: bewusster Start, QA-Nachweis für den veröffentlichten Commit, erste Abnahme #43 sowie Reviewer-/Issue-Zuordnung.
+**Empfehlung: Release Please im Manifest-Modus.** Die ursprüngliche Python-Eigenimplementierung in PR #46 wurde durch Release Please ersetzt. Versionsberechnung, Dateiaktualisierung, Changelog, Release-PR und Release-Verwaltung werden von dem etablierten Werkzeug übernommen. Eigene Logik bleibt auf projektspezifische Grenzen beschränkt: bewusster Start, QA-Nachweis für den veröffentlichten Commit, erste Abnahme #43 sowie Reviewer-/Issue-Zuordnung.
 
 ## Vergleich
 
@@ -29,7 +29,7 @@ Der Offline-Nachweis prüft mit der Rust-Strategie und den tatsächlichen Cargo-
 
 Dafür sind die Standardoptionen `bump-minor-pre-major`, `bump-patch-for-minor-pre-major`, `include-component-in-tag` und `tag-separator` relevant. Später wird `frontend` als separate `node`-Komponente ergänzt; noch kein leeres Frontend erzeugen.
 
-## Konsequenzen für die Umstellung
+## Konsequenzen der Umstellung
 
 - Versionsvorschläge folgen Conventional Commits; die bisherige manuelle Auswahl des Sprungs wird durch einen bewusst gestarteten Vorbereitungsablauf und Review des berechneten Vorschlags ersetzt. Bewusste Ausnahmen über die dokumentierte Release-As-Konvention prüfen, statt einen zweiten Versionsrechner zu behalten.
 - Das Release-Please-Manifest ist zusätzliche Versionshistorie und muss im Versions-PR konsistent mit den Komponentenmanifesten bleiben.
@@ -37,7 +37,7 @@ Dafür sind die Standardoptionen `bump-minor-pre-major`, `bump-patch-for-minor-p
 - GITHUB_TOKEN-Beschränkungen bleiben bestehen. Erforderliche Folgeprüfungen ausdrücklich anstoßen oder eine bewusst eingerichtete App-Identität verwenden. Keine zusätzliche Identität oder Berechtigung wurde eingerichtet.
 - Reviewer `Skanky0815`, Verantwortlicher `Sara-Pixel42` und Issue-Bezug bleiben verbindlich. Nicht annehmen, dass das Release-Werkzeug diese projektspezifischen Zuordnungen automatisch kennt.
 
-Der Offline-Nachweis bestätigt die Kernfunktionen, ersetzt aber keinen echten GitHub-End-to-End-Test. Dieser bleibt nach Umstellung, Review/Merge und Freigabe der benötigten Repository-Einstellung Teil von #44. Es wurden keine Tags oder Releases erstellt.
+Der Offline-Nachweis bestätigt die Kernfunktionen, ersetzt aber keinen echten GitHub-End-to-End-Test. Dieser bleibt nach Review/Merge und Freigabe der benötigten Repository-Einstellung Teil von #44. Es wurden keine Tags oder Releases erstellt.
 
 ## Primärquellen
 
