@@ -33,6 +33,7 @@ jobs:
           SOURCE_SHA: ${{ inputs.source-sha }}
           MACHINE: ${{ matrix.machine }}
         run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           test "$(uname -m)" = "$MACHINE"
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
       - uses: Swatinem/rust-cache@v2
