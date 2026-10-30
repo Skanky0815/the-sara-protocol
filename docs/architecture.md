@@ -31,7 +31,7 @@ Authentifizierung, weitere Datenmodell-Erweiterungen, Embedding-Provider, Backup
 
 Das Rust-Paket einschließlich Lockfile, Quellcode, Tests, SQLx-Migrationen, lokaler Konfiguration und Dockerfile liegt unter `backend/`. Ein späteres `frontend/` kann als Geschwisterverzeichnis ergänzt werden. Es gibt keinen Root-Cargo-Workspace. Gemeinsame Orchestrierung (`compose.yaml`), CI, Arbeitsregeln und Projektdokumentation bleiben im Root bzw. unter `docs/`. Backend-spezifische Entwicklungs- und Deployment-Anweisungen bleiben zentral in [getting-started.md](getting-started.md).
 
-Lokal wird aus `backend/` gestartet. Im Backend-Image liegt `migrations/` unter dem festen Arbeitsverzeichnis `/app/backend`; Compose startet das Backend erst nach gesundem PostgreSQL. Das bestehende Laufzeit-Migrationsmodell bleibt erhalten; ein konfigurierbarer Pfad aus Issue #24 wird hier nicht eingeführt. Siehe [ADR 0005](adr/0005-backend-directory.md).
+Lokal wird aus `backend/` gestartet. Im Backend-Image liegt `migrations/` unter dem festen Arbeitsverzeichnis `/app/backend`; Compose startet das Backend erst nach gesundem PostgreSQL. Das bestehende Laufzeit-Migrationsmodell bleibt erhalten; `MIGRATIONS_DIR` erlaubt gemäß [ADR 0007](adr/0007-configurable-migrations.md) einen konfigurierbaren Pfad; das Image setzt einen absoluten Standard. Siehe [ADR 0005](adr/0005-backend-directory.md).
 
 Die [Persona-API](persona-api.md) verwendet das bestehende Schema ohne Migration: Namen werden validiert und parametrisiert gespeichert, Abrufe durch die Persona-ID eingeschränkt. Memory-Zuordnung und Request-Tracing bleiben erhalten.
 

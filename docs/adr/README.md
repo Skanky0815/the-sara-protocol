@@ -15,3 +15,5 @@ Each ADR records date, status, context, decision, alternatives, consequences and
 - [0006 – OpenAPI aus Handlern und Datentypen generieren](0006-generated-openapi.md) — Proposed
 
 Authorship in an ADR is a documentation claim, not proof of Git commit authorship. GitHub connector commits may use the integration identity; do not spoof a human or claim an AI GitHub account exists.
+
+- [0007 – Konfigurierbarer Migrationspfad](0007-configurable-migrations.md) — Proposed

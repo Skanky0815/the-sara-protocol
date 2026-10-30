@@ -25,7 +25,7 @@ async fn run() -> Result<(), ()> {
     let pool = telemetry::connect_database(&config.database_url)
         .await
         .map_err(|_| ())?;
-    let migrations = sqlx_core::migrate::Migrator::new(std::path::Path::new("./migrations"))
+    let migrations = sqlx_core::migrate::Migrator::new(config.migrations_dir.as_path())
         .await
         .map_err(|_| {
             tracing::error!(

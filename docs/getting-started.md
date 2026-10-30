@@ -14,7 +14,7 @@ cargo run --locked
 
 Der Dienst lädt `.env` für lokale Entwicklung. Bereits exportierte Umgebungsvariablen haben Vorrang. `HOST` ist standardmäßig `127.0.0.1`, `PORT` ist `3000`; `DATABASE_URL` ist erforderlich. Ungültige Konfiguration, Datenbankverbindungsfehler und fehlende oder unlesbare Migrationen verhindern den Start vor dem Öffnen des HTTP-Ports.
 
-Die SQLx-Migrationen werden zur Laufzeit aus `./migrations` geladen, also lokal aus `backend/migrations`. Deshalb zuerst nach `backend/` wechseln: `cargo run --manifest-path backend/Cargo.toml` aus dem Root ändert das Arbeitsverzeichnis des gestarteten Programms nicht. `cargo build --locked` baut ebenfalls aus `backend/`. Eine separat verteilte Binary benötigt weiterhin ein mitgeliefertes `migrations/` im Arbeitsverzeichnis. Ein konfigurierbarer Migrationspfad oder separater Deployment-Migrationsschritt bleibt Gegenstand von [Issue #24](https://github.com/Skanky0815/the-sara-protocol/issues/24).
+Die SQLx-Migrationen werden zur Laufzeit standardmäßig aus `./migrations` geladen, also lokal aus `backend/migrations`. Deshalb ohne weitere Konfiguration zuerst nach `backend/` wechseln: `cargo run --manifest-path backend/Cargo.toml` aus dem Root ändert das Arbeitsverzeichnis des gestarteten Programms nicht. Alternativ `MIGRATIONS_DIR` auf das mitgelieferte Migrationsverzeichnis setzen, für Deployments vorzugsweise als absoluten Pfad. Eine separat verteilte Binary benötigt die SQL-Dateien weiterhin; siehe [Migrationspfad bei Deployments](#migrationspfad-bei-deployments).
 
 SQLx wird direkt über `sqlx-core` und `sqlx-postgres` ohne Makros verwendet; siehe [ADR 0004](adr/0004-runtime-migrations.md). Die SQLx-CLI ist nicht für Start oder Tests erforderlich. Falls installiert, verwendet `sqlx migrate run --source migrations` aus `backend/` denselben Pfad und eine exportierte `DATABASE_URL`.
 
@@ -131,3 +131,13 @@ Der Integrationstest-Einstieg `backend/tests/logging.rs` bindet die getrennten M
 ## OpenAPI lokal abrufen
 
 Nach dem Backend-Start liefert `GET /openapi.json` den aus Handlern und Datentypen generierten Vertrag. Abruf, Pflege am Code und Tests sind in der [API-Referenz](api-reference.md) beschrieben. `cargo test --locked --test openapi_contract` prüft die HTTP-Antworten gegen die Schemas; für die Datenbankfälle muss eine dedizierte `DATABASE_URL` gesetzt sein.
+
+## Migrationspfad bei Deployments
+
+`MIGRATIONS_DIR` legt das Verzeichnis der SQLx-Migrationen fest. Ohne Angabe bleibt `./migrations` relativ zum Arbeitsverzeichnis erhalten. Leere Werte werden als Konfigurationsfehler abgewiesen. Relative Pfade werden relativ zum Arbeitsverzeichnis ausgewertet; für Dienste außerhalb von `backend/` einen absoluten Pfad verwenden:
+
+```sh
+MIGRATIONS_DIR=/opt/sara/backend/migrations /opt/sara/bin/the-sara-protocol
+```
+
+Das Deployment muss sämtliche versionierten SQL-Dateien aus `backend/migrations/` mit ausliefern. Der Container setzt `MIGRATIONS_DIR=/app/backend/migrations` und funktioniert dadurch auch bei überschriebenem Arbeitsverzeichnis. Bei einem anderen Mount-Pfad die Variable entsprechend überschreiben. Es gibt keinen separaten Migrationsjob: Laden und Anwenden erfolgen vor Öffnen des HTTP-Ports. Fehlende, unlesbare oder ungültige Migrationen bzw. fehlgeschlagene Anwendungen beenden den Prozess mit Fehlerstatus und strukturiertem Fehlerereignis. Details und Verbindungsdaten werden nicht protokolliert. Siehe [ADR 0007](adr/0007-configurable-migrations.md).

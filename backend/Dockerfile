@@ -13,7 +13,7 @@ WORKDIR /app/backend
 COPY --from=builder /build/backend/target/release/the-sara-protocol /usr/local/bin/the-sara-protocol
 COPY migrations ./migrations
 USER sara
-ENV HOST=0.0.0.0 PORT=3000
+ENV HOST=0.0.0.0 PORT=3000 MIGRATIONS_DIR=/app/backend/migrations
 EXPOSE 3000
 HEALTHCHECK --interval=5s --timeout=5s --start-period=10s --retries=10 \
     CMD curl --fail --silent "http://127.0.0.1:${PORT}/health" || exit 1
