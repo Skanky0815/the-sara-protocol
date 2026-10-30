@@ -1,0 +1,41 @@
+name: Publish component release
+
+on:
+  workflow_run:
+    workflows: [Rust QA]
+    types: [completed]
+    branches: [main]
+
+permissions: {}
+
+concurrency:
+  group: component-release-backend
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: read
+      actions: read
+      issues: read
+    steps:
+      # Only the reviewed main push is checked out; no PR artifacts or caches.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Geprüften Release-Auftrag veröffentlichen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python .github/scripts/component_release.py publish

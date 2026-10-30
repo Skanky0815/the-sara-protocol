@@ -45,6 +45,7 @@ Die Konfiguration, Tests, SQLx-Migrationspfade und Container-Prüfungen beschrei
 - [Architektur und API-Planung](docs/architecture.md)
 - [Generierte API-Referenz (OpenAPI)](docs/api-reference.md)
 - [Personas lokal verwenden](docs/persona-api.md)
+- [Komponentenversionen und Releases](docs/releases.md)
 - [Architekturentscheidungen](docs/adr/README.md)
 - [Persona](docs/persona.md)
 - [Fiktionaler World-State mit Pixel](docs/world-state.md)
