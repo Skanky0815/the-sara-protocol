@@ -25,7 +25,7 @@ Portabler Persona- und Memory-Service für ChatGPT, lokale LLMs und IDE-Clients.
 - Orte und NPCs als spätere World-State-Entitäten
 
 ## Offene Punkte
-Authentifizierung, API-Schema, Datenmodell, Embedding-Provider, Backup und Rechtekonzept sind noch zu entscheiden.
+Authentifizierung, weitere Datenmodell-Erweiterungen, Embedding-Provider, Backup und Rechtekonzept sind noch zu entscheiden. Der vorhandene HTTP-Vertrag wird als OpenAPI am Code gepflegt.
 
 ## Repository und Betrieb
 
@@ -34,3 +34,5 @@ Das Rust-Paket einschließlich Lockfile, Quellcode, Tests, SQLx-Migrationen, lok
 Lokal wird aus `backend/` gestartet. Im Backend-Image liegt `migrations/` unter dem festen Arbeitsverzeichnis `/app/backend`; Compose startet das Backend erst nach gesundem PostgreSQL. Das bestehende Laufzeit-Migrationsmodell bleibt erhalten; ein konfigurierbarer Pfad aus Issue #24 wird hier nicht eingeführt. Siehe [ADR 0005](adr/0005-backend-directory.md).
 
 Die [Persona-API](persona-api.md) verwendet das bestehende Schema ohne Migration: Namen werden validiert und parametrisiert gespeichert, Abrufe durch die Persona-ID eingeschränkt. Memory-Zuordnung und Request-Tracing bleiben erhalten.
+
+Die [OpenAPI-Referenz](api-reference.md) wird gemeinsam mit den Axum-Routen registriert und unter `/openapi.json` ausgeliefert. Handler- und DTO-Annotationen bilden den Vertrag; JSON-Schema-Vertragstests vergleichen echte Antworten damit. Siehe [ADR 0006](adr/0006-generated-openapi.md).

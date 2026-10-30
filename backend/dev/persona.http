@@ -4,6 +4,9 @@
 @baseUrl = http://127.0.0.1:3000
 @personaId = 1
 
+### Generated OpenAPI reference
+GET {{baseUrl}}/openapi.json
+
 ### Health
 GET {{baseUrl}}/health
 

@@ -127,3 +127,7 @@ Erfolgreiche Requests werden mit `INFO`, Clientfehler mit `WARN` und Serverfehle
 Authorization-/Cookie-Header, Tokens, Passwörter, Verbindungs-URLs, Bodies und Persona-/Memory-Inhalte gehören nicht in Logs, auch nicht bei Debug. Konfigurations-Debugausgaben schwärzen die Datenbank-URL. Auf eine pauschale `instrument`-Aufzeichnung von Funktionsargumenten wird verzichtet. Die bestehenden öffentlichen API-Fehlerantworten ändern sich nicht.
 
 Der Integrationstest-Einstieg `backend/tests/logging.rs` bindet die getrennten Module unter `backend/tests/logging_cases/` ein (Filter, Requests, Datenbank, Konfiguration und Start; gemeinsame Helfer in `support.rs`). Die Tests erfassen echte JSON-Ausgaben und prüfen Filter, Request-Zuordnung, Status/Dauer, Start-/Datenbankfehler sowie das Ausbleiben von Test-Secrets. Die PostgreSQL-Fälle benötigen wie die übrigen Integrationstests eine dedizierte `DATABASE_URL`.
+
+## OpenAPI lokal abrufen
+
+Nach dem Backend-Start liefert `GET /openapi.json` den aus Handlern und Datentypen generierten Vertrag. Abruf, Pflege am Code und Tests sind in der [API-Referenz](api-reference.md) beschrieben. `cargo test --locked --test openapi_contract` prüft die HTTP-Antworten gegen die Schemas; für die Datenbankfälle muss eine dedizierte `DATABASE_URL` gesetzt sein.

@@ -1,28 +1,32 @@
 use axum::{
     extract::{Path, State},
     http::StatusCode,
-    routing::get,
-    Json, Router,
+    Json,
 };
 use serde::{Deserialize, Serialize};
 use sqlx_core::row::Row;
 use sqlx_postgres::{PgPool, PgRow};
+use utoipa::ToSchema;
+use utoipa_axum::{router::OpenApiRouter, routes};
 
 #[derive(Clone)]
 pub struct AppState {
     pub pool: PgPool,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 #[serde(deny_unknown_fields)]
 pub struct CreateMemory {
+    /// Weder leer noch ausschließlich Whitespace; maximal 100000 UTF-8-Bytes.
     pub content: String,
+    /// Weder leer noch ausschließlich Whitespace; maximal 2000 UTF-8-Bytes.
     pub source: String,
+    #[schema(format = DateTime)]
     pub observed_at: String,
     pub confirmation_status: ConfirmationStatus,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ConfirmationStatus {
     Confirmed,
@@ -38,13 +42,19 @@ impl ConfirmationStatus {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct Memory {
+    #[schema(minimum = 1)]
     pub id: i64,
+    #[schema(minimum = 1)]
     pub persona_id: i64,
+    /// Weder leer noch ausschließlich Whitespace; maximal 100000 UTF-8-Bytes.
     pub content: String,
+    /// Weder leer noch ausschließlich Whitespace; maximal 2000 UTF-8-Bytes.
     pub source: String,
+    #[schema(format = DateTime)]
     pub observed_at: String,
+    #[schema(value_type = ConfirmationStatus)]
     pub confirmation_status: String,
 }
 
@@ -66,13 +76,25 @@ fn valid_input(input: &CreateMemory) -> bool {
         && input.source.len() <= 2_000
 }
 
-pub fn routes() -> Router<AppState> {
-    Router::new().route(
-        "/personas/{id}/memories",
-        get(list_memories).post(create_memory),
-    )
+pub fn routes() -> OpenApiRouter<AppState> {
+    OpenApiRouter::new().routes(routes!(list_memories, create_memory))
 }
 
+/// Memory mit Provenienz für eine Persona speichern.
+#[utoipa::path(
+    post, path = "/personas/{id}/memories", operation_id = "createMemory", tag = "Memories",
+    params(("id" = i64, Path, minimum = 1, description = "Positive Persona-ID")),
+    request_body = CreateMemory,
+    responses(
+        (status = 201, description = "Memory gespeichert", body = Memory),
+        (status = 400, description = "Ungültige ID, Eingabe oder Zeitangabe; leerer Body bei fachlicher Validierung, sonst text/plain", body = String, content_type = "text/plain"),
+        (status = 404, description = "Persona nicht gefunden; leerer Body"),
+        (status = 413, description = "Request-Body zu groß", body = String, content_type = "text/plain"),
+        (status = 415, description = "JSON-Content-Type fehlt oder ist nicht unterstützt", body = String, content_type = "text/plain"),
+        (status = 422, description = "Fehlendes, unbekanntes oder falsch typisiertes JSON-Feld", body = String, content_type = "text/plain"),
+        (status = 500, description = "Datenbankfehler; leerer Body")
+    )
+)]
 async fn create_memory(
     State(state): State<AppState>,
     Path(persona_id): Path<i64>,
@@ -108,6 +130,17 @@ async fn create_memory(
     Ok((StatusCode::CREATED, Json(map_row(row))))
 }
 
+/// Memories einer Persona nach ID geordnet abrufen.
+#[utoipa::path(
+    get, path = "/personas/{id}/memories", operation_id = "listMemories", tag = "Memories",
+    params(("id" = i64, Path, minimum = 1, description = "Positive Persona-ID")),
+    responses(
+        (status = 200, description = "Nur Memories der angefragten Persona", body = [Memory]),
+        (status = 400, description = "Ungültige ID (text/plain bei Pfadfehlern, sonst leer)", body = String, content_type = "text/plain"),
+        (status = 404, description = "Persona nicht gefunden; leerer Body"),
+        (status = 500, description = "Datenbankfehler; leerer Body")
+    )
+)]
 async fn list_memories(
     State(state): State<AppState>,
     Path(persona_id): Path<i64>,
