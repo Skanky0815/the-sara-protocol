@@ -36,6 +36,10 @@ Alternativ startet `docker compose up --build -d --wait` aus dem Root das Backen
 
 Die Konfiguration, Tests, SQLx-Migrationspfade und Container-Prüfungen beschreibt die [Entwicklungsanleitung](docs/getting-started.md).
 
+## Beiträge
+
+[Beitragsrichtlinien und Projektsprache](CONTRIBUTING.md) beschreiben Sprache, Issue-Verweise und Validierung.
+
 ## Dokumentation
 
 - [Architektur und API-Planung](docs/architecture.md)

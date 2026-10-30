@@ -1,18 +1,18 @@
-# ADR 0002: PostgreSQL with JSONB
+# ADR 0002: PostgreSQL mit JSONB
 
-- Date: 2026-10-27 (retrospective record)
-- Status: Accepted
-- Decision participants: Rico and Sara (AI assistant)
-- Documented by: Sara (AI assistant)
+- Datum: 2026-10-27 (nachträglich dokumentiert)
+- Status: Akzeptiert
+- An der Entscheidung beteiligt: Rico und Sara (KI-Assistentin)
+- Dokumentiert von: Sara (KI-Assistentin)
 
-## Context
-Persona and memory records need flexible document-shaped fields alongside relationships, transactions and provenance.
+## Kontext
+Persona- und Erinnerungsdatensätze benötigen flexible, dokumentartige Felder sowie Beziehungen, Transaktionen und nachvollziehbare Herkunft.
 
-## Decision
-Use PostgreSQL with JSONB for the MVP, leaving pgvector as an optional later addition. No separate search service initially.
+## Entscheidung
+PostgreSQL mit JSONB für das MVP verwenden; pgvector bleibt eine optionale spätere Ergänzung. Zunächst kein separater Suchdienst.
 
-## Alternatives
-MongoDB and CouchDB were discussed.
+## Alternativen
+MongoDB und CouchDB wurden diskutiert.
 
-## Consequences
-One database can handle relational and flexible data. Schema and migrations still need deliberate design; vector search is not yet implemented.
+## Konsequenzen
+Eine Datenbank kann relationale und flexible Daten abdecken. Schema und Migrationen müssen weiterhin sorgfältig entworfen werden; die Vektorsuche ist noch nicht implementiert.

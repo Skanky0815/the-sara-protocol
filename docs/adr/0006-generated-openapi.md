@@ -1,7 +1,7 @@
 # ADR 0006: OpenAPI aus Handlern und Datentypen generieren
 
 - Datum: 2026-10-29
-- Status: Proposed
+- Status: Vorgeschlagen
 - Dokumentiert von: Sara
 - Bezug: Issue #12 und Ricos Review von PR #38
 
