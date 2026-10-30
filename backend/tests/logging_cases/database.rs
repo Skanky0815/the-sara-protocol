@@ -30,7 +30,7 @@ async fn invalid_database_url_is_not_echoed() {
 }
 
 #[tokio::test(flavor = "current_thread")]
-async fn postgres_rejection_has_safe_fields_and_request_correlation() {
+async fn invalid_timestamp_is_rejected_without_database_error_or_sensitive_logs() {
     let Ok(url) = std::env::var("DATABASE_URL") else {
         return;
     };
@@ -60,16 +60,12 @@ async fn postgres_rejection_has_safe_fields_and_request_correlation() {
         .unwrap();
     pool.close().await;
     let events = logs.events();
-    let error = events
-        .iter()
-        .find(|e| e["fields"]["error_kind"] == "invalid_timestamp")
-        .unwrap();
+    assert!(events.iter().all(|e| e["fields"]["error_kind"].is_null()));
     let completed = events
         .iter()
         .find(|e| e["fields"]["status"] == 400)
         .unwrap();
-    assert_eq!(error["level"], "WARN");
-    assert_eq!(error["span"]["request_id"], completed["span"]["request_id"]);
+    assert!(completed["span"]["request_id"].is_u64());
     assert!(!logs.text().contains("secret"));
     assert!(!logs.text().contains(&url));
 }

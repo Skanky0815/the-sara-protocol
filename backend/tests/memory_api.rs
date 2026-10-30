@@ -238,3 +238,126 @@ async fn unsupported_confirmation_status_is_rejected_without_persisting() {
     .await;
     test.cleanup().await;
 }
+
+async fn assert_timestamp_rejected_and_persona_remains_usable(values: &[&str]) {
+    let Some(test) = TestApp::new().await else {
+        return;
+    };
+    for value in values {
+        test.assert_rejected("observed_at", value, StatusCode::BAD_REQUEST)
+            .await;
+        assert!(test.list().await.is_empty());
+    }
+    let created = test.create().await;
+    assert_eq!(test.list().await, vec![created]);
+    test.cleanup().await;
+}
+
+#[tokio::test]
+async fn date_only_is_rejected_without_writes_or_damaged_reads() {
+    assert_timestamp_rejected_and_persona_remains_usable(&["2026-10-30"]).await;
+}
+#[tokio::test]
+async fn timestamp_without_timezone_is_rejected_without_writes() {
+    assert_timestamp_rejected_and_persona_remains_usable(&["2026-10-30T15:00:00"]).await;
+}
+#[tokio::test]
+async fn relative_postgres_timestamps_are_rejected_without_writes() {
+    assert_timestamp_rejected_and_persona_remains_usable(&[
+        "now",
+        "today",
+        "tomorrow",
+        "yesterday",
+    ])
+    .await;
+}
+#[tokio::test]
+async fn positive_infinity_is_rejected_without_writes() {
+    assert_timestamp_rejected_and_persona_remains_usable(&["infinity"]).await;
+}
+#[tokio::test]
+async fn negative_infinity_is_rejected_without_writes() {
+    assert_timestamp_rejected_and_persona_remains_usable(&["-infinity"]).await;
+}
+#[tokio::test]
+async fn timestamps_outside_the_api_year_range_are_rejected() {
+    assert_timestamp_rejected_and_persona_remains_usable(&[
+        "0000-01-01T00:00:00Z",
+        "9999-12-31T23:59:59-01:00",
+    ])
+    .await;
+}
+#[tokio::test]
+async fn offset_timestamps_roundtrip_in_utc_at_microsecond_precision() {
+    let Some(test) = TestApp::new().await else {
+        return;
+    };
+    let mut body = valid_memory();
+    body["observed_at"] = "2026-10-30T16:00:00.123456789+01:00".into();
+    let response = test.request("POST", test.persona_id, Some(body)).await;
+    assert_eq!(response.status(), StatusCode::CREATED);
+    let created = response_json(response).await;
+    assert_eq!(created["observed_at"], "2026-10-30T15:00:00.123456Z");
+    assert_eq!(test.list().await, vec![created]);
+    test.cleanup().await;
+}
+async fn assert_legacy_timestamp_returns_controlled_error(value: &str) {
+    let Some(test) = TestApp::new().await else {
+        return;
+    };
+    let other = TestApp::new().await.unwrap();
+    sqlx_core::query::query(
+        "INSERT INTO memories(persona_id, content, source, observed_at)
+         VALUES ($1, 'synthetic legacy record', 'regression test', $2::timestamptz)",
+    )
+    .bind(test.persona_id)
+    .bind(value)
+    .execute(&test.pool)
+    .await
+    .unwrap();
+    let response = test.request("GET", test.persona_id, None).await;
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert!(to_bytes(response.into_body(), 1024)
+        .await
+        .unwrap()
+        .is_empty());
+    let (count,): (i64,) =
+        sqlx_core::query_as::query_as("SELECT COUNT(*) FROM memories WHERE persona_id = $1")
+            .bind(test.persona_id)
+            .fetch_one(&test.pool)
+            .await
+            .unwrap();
+    assert_eq!(count, 1, "Reading must not delete the invalid stored row");
+    let created = other.create().await;
+    assert_eq!(other.list().await, vec![created]);
+    let response = test
+        .app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/health")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    test.cleanup().await;
+    other.cleanup().await;
+}
+#[tokio::test]
+async fn legacy_positive_infinity_returns_500_without_panic_or_deletion() {
+    assert_legacy_timestamp_returns_controlled_error("infinity").await;
+}
+#[tokio::test]
+async fn legacy_negative_infinity_returns_500_without_panic_or_deletion() {
+    assert_legacy_timestamp_returns_controlled_error("-infinity").await;
+}
+#[tokio::test]
+async fn legacy_year_above_9999_returns_500_without_panic_or_deletion() {
+    assert_legacy_timestamp_returns_controlled_error("10000-01-01T00:00:00Z").await;
+}
+#[tokio::test]
+async fn legacy_bc_year_returns_500_instead_of_a_wrong_ad_date() {
+    assert_legacy_timestamp_returns_controlled_error("0001-01-01 00:00:00+00 BC").await;
+}

@@ -41,3 +41,9 @@ cargo audit
 ```
 
 Die Einrichtung der Testdatenbank steht in der [Entwicklungsanleitung](getting-started.md). Fachliche Beispiele stehen in der [Persona-Anleitung](persona-api.md) und im [IntelliJ HTTP Client](../backend/dev/persona.http). Die vollständige Referenz wird nicht als separat gepflegte JSON-/YAML-Datei eingecheckt.
+
+## Zeitangaben für Memories
+
+`observed_at` muss RFC3339 mit expliziter Zeitzone erfüllen. Der normalisierte UTC-Zeitpunkt muss im Jahr 0001 bis 9999 liegen. Datum ohne Uhrzeit, fehlende Zeitzone, relative PostgreSQL-Ausdrücke und `infinity`/`-infinity` werden vor dem Schreiben mit HTTP 400 abgelehnt. Die Ausgabe erfolgt in UTC mit sechs Nachkommastellen; zusätzliche Nachkommastellen werden bei der Eingabe abgeschnitten.
+
+Bereits vorhandene Zeitwerte außerhalb dieses Vertrags führen beim Lesen der betroffenen Memory-Liste zu einer kontrollierten, leeren HTTP-500-Antwort. Die Daten bleiben erhalten; es werden weder Einträge still ausgeblendet noch automatisch gelöscht. Andere Personas und Health bleiben erreichbar. Eine Bereinigung solcher Altdaten braucht eine gesonderte Entscheidung.
