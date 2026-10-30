@@ -16,8 +16,8 @@ Stand: 2026-10-30. Implementiert bedeutet nicht automatisch abgenommen oder ver�
 
 ## Sprint 0 – vor Abschluss noch offen
 
-- [ ] [#50: RFC3339-Zeitstempelvalidierung und kontrollierter Umgang mit Sonderwerten](https://github.com/Skanky0815/the-sara-protocol/issues/50) — blockiert die technische Freigabe.
-- [ ] [#43: technische Abnahme und Dokumentationsabgleich](https://github.com/Skanky0815/the-sara-protocol/issues/43) — [erster Registry-Image-Nachweis](acceptance/2026-10-30-sprint0.md): Kernfälle bestanden, wegen #50 noch nicht freigegeben.
+- [x] [#50: RFC3339-Zeitstempelvalidierung und kontrollierter Umgang mit Sonderwerten](https://github.com/Skanky0815/the-sara-protocol/issues/50) — behoben in PR #52; [Registry-Nachprüfung bestanden](acceptance/2026-10-30-sprint0-retest.md).
+- [ ] [#43: technische Abnahme und Dokumentationsabgleich](https://github.com/Skanky0815/the-sara-protocol/issues/43) — [Registry-Nachprüfung bestanden](acceptance/2026-10-30-sprint0-retest.md); Ricos Freigabe des Nachweises steht aus.
 - [ ] [#44: echter Versions-PR-/Release-Betriebsnachweis](https://github.com/Skanky0815/the-sara-protocol/issues/44) — Umsetzung vorhanden; Berechtigung und realer Ablauf noch offen.
 - [ ] [#47: versioniertes Image mit identischem geprüftem Digest](https://github.com/Skanky0815/the-sara-protocol/issues/47) — Commit-Image veröffentlicht; stabiler Release folgt erst nach Abnahme.
 

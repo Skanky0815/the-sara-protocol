@@ -1,0 +1,443 @@
+{
+  "architecture": "arm64",
+  "os": "linux",
+  "runtime_user": "sara",
+  "postgres_image": "postgres@sha256:31ba9c94a03ada9988f2bb493a22a75eef3a185884533e5cdbcd498ea835b08f",
+  "port": 53043,
+  "working_directory": "/tmp",
+  "source_commit": "6494a123520b4be5bc5329ebad6dcdde8683a816",
+  "compose_project": "sara-sprint0-retest-20261030",
+  "delivery_run": "https://github.com/Skanky0815/the-sara-protocol/actions/runs/41098326215",
+  "checks": [
+    {
+      "name": "Frische Datenbank und Migrationen",
+      "passed": true,
+      "detail": "20261027200000|t\n20261028130000|t\n0\n0"
+    },
+    {
+      "name": "Unprivilegierter Start aus fremdem Arbeitsverzeichnis",
+      "passed": true,
+      "detail": "10001\n/tmp\n/app/backend/migrations"
+    },
+    {
+      "name": "Health",
+      "passed": true,
+      "detail": "HTTP 200, erwartet 200"
+    },
+    {
+      "name": "Health-Body",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "OpenAPI",
+      "passed": true,
+      "detail": "HTTP 200, erwartet 200"
+    },
+    {
+      "name": "OpenAPI-Pfade",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Persona Alpha erstellen",
+      "passed": true,
+      "detail": "HTTP 201, erwartet 201"
+    },
+    {
+      "name": "Persona Beta erstellen",
+      "passed": true,
+      "detail": "HTTP 201, erwartet 201"
+    },
+    {
+      "name": "Name-Normalisierung und Location",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Persona gezielt lesen",
+      "passed": true,
+      "detail": "HTTP 200, erwartet 200"
+    },
+    {
+      "name": "Persona-Roundtrip",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Namenskonflikt",
+      "passed": true,
+      "detail": "HTTP 409, erwartet 409"
+    },
+    {
+      "name": "Leerer Name",
+      "passed": true,
+      "detail": "HTTP 400, erwartet 400"
+    },
+    {
+      "name": "Unbekanntes Persona-Feld",
+      "passed": true,
+      "detail": "HTTP 422, erwartet 422"
+    },
+    {
+      "name": "Unbekannte Persona",
+      "passed": true,
+      "detail": "HTTP 404, erwartet 404"
+    },
+    {
+      "name": "Nichtpositive Persona-ID",
+      "passed": true,
+      "detail": "HTTP 400, erwartet 400"
+    },
+    {
+      "name": "Bestätigte Memory",
+      "passed": true,
+      "detail": "HTTP 201, erwartet 201"
+    },
+    {
+      "name": "Abgeleitete Memory",
+      "passed": true,
+      "detail": "HTTP 201, erwartet 201"
+    },
+    {
+      "name": "Provenienz und Zeitzonen-Normalisierung",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Inferred bleibt inferred",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Alpha-Memories lesen",
+      "passed": true,
+      "detail": "HTTP 200, erwartet 200"
+    },
+    {
+      "name": "Beta-Memories lesen",
+      "passed": true,
+      "detail": "HTTP 200, erwartet 200"
+    },
+    {
+      "name": "Persona-Isolation beidseitig",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Leerer Inhalt",
+      "passed": true,
+      "detail": "HTTP 400, erwartet 400"
+    },
+    {
+      "name": "Leere Quelle",
+      "passed": true,
+      "detail": "HTTP 400, erwartet 400"
+    },
+    {
+      "name": "Ungültiger Zeitstempel",
+      "passed": true,
+      "detail": "HTTP 400, erwartet 400"
+    },
+    {
+      "name": "Ungültiger Bestätigungsstatus",
+      "passed": true,
+      "detail": "HTTP 422, erwartet 422"
+    },
+    {
+      "name": "Abgelehnte Requests schreiben nichts",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Memory für unbekannte Persona",
+      "passed": true,
+      "detail": "HTTP 404, erwartet 404"
+    },
+    {
+      "name": "Memory für ID null",
+      "passed": true,
+      "detail": "HTTP 400, erwartet 400"
+    },
+    {
+      "name": "Falscher Content-Type",
+      "passed": true,
+      "detail": "HTTP 415, erwartet 415"
+    },
+    {
+      "name": "Fehlerhaftes JSON",
+      "passed": true,
+      "detail": "HTTP 400, erwartet 400"
+    },
+    {
+      "name": "Vor Neustart persistenter Sollzustand",
+      "passed": true,
+      "detail": "2 Personas, 2 Memories"
+    },
+    {
+      "name": "RFC3339-Grenze: 2026-10-30",
+      "passed": true,
+      "detail": "HTTP 400, erwartet 400"
+    },
+    {
+      "name": "RFC3339-Grenze: 2026-10-30T15:00:00",
+      "passed": true,
+      "detail": "HTTP 400, erwartet 400"
+    },
+    {
+      "name": "RFC3339-Grenze: now",
+      "passed": true,
+      "detail": "HTTP 400, erwartet 400"
+    },
+    {
+      "name": "RFC3339-Grenze: today",
+      "passed": true,
+      "detail": "HTTP 400, erwartet 400"
+    },
+    {
+      "name": "RFC3339-Grenze: tomorrow",
+      "passed": true,
+      "detail": "HTTP 400, erwartet 400"
+    },
+    {
+      "name": "RFC3339-Grenze: yesterday",
+      "passed": true,
+      "detail": "HTTP 400, erwartet 400"
+    },
+    {
+      "name": "RFC3339-Grenze: infinity",
+      "passed": true,
+      "detail": "HTTP 400, erwartet 400"
+    },
+    {
+      "name": "RFC3339-Grenze: -infinity",
+      "passed": true,
+      "detail": "HTTP 400, erwartet 400"
+    },
+    {
+      "name": "RFC3339-Grenze: 0000-01-01T00:00:00Z",
+      "passed": true,
+      "detail": "HTTP 400, erwartet 400"
+    },
+    {
+      "name": "RFC3339-Grenze: 9999-12-31T23:59:59-01:00",
+      "passed": true,
+      "detail": "HTTP 400, erwartet 400"
+    },
+    {
+      "name": "Grenzproben schreiben nichts; Alpha bleibt lesbar",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Offset und Submikrosekunden",
+      "passed": true,
+      "detail": "HTTP 201, erwartet 201"
+    },
+    {
+      "name": "Mikrosekunden werden abgeschnitten",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Präzisions-Roundtrip",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Altdaten-Persona 0",
+      "passed": true,
+      "detail": "HTTP 201, erwartet 201"
+    },
+    {
+      "name": "Altdaten kontrolliert: infinity",
+      "passed": true,
+      "detail": "HTTP 500, leerer Body"
+    },
+    {
+      "name": "Altdaten erhalten: infinity",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Andere Persona nach Altdatenfehler: infinity",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Health nach Altdatenfehler: infinity",
+      "passed": true,
+      "detail": "HTTP 200, erwartet 200"
+    },
+    {
+      "name": "Altdaten-Persona 1",
+      "passed": true,
+      "detail": "HTTP 201, erwartet 201"
+    },
+    {
+      "name": "Altdaten kontrolliert: -infinity",
+      "passed": true,
+      "detail": "HTTP 500, leerer Body"
+    },
+    {
+      "name": "Altdaten erhalten: -infinity",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Andere Persona nach Altdatenfehler: -infinity",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Health nach Altdatenfehler: -infinity",
+      "passed": true,
+      "detail": "HTTP 200, erwartet 200"
+    },
+    {
+      "name": "Altdaten-Persona 2",
+      "passed": true,
+      "detail": "HTTP 201, erwartet 201"
+    },
+    {
+      "name": "Altdaten kontrolliert: 10000-01-01T00:00:00Z",
+      "passed": true,
+      "detail": "HTTP 500, leerer Body"
+    },
+    {
+      "name": "Altdaten erhalten: 10000-01-01T00:00:00Z",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Andere Persona nach Altdatenfehler: 10000-01-01T00:00:00Z",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Health nach Altdatenfehler: 10000-01-01T00:00:00Z",
+      "passed": true,
+      "detail": "HTTP 200, erwartet 200"
+    },
+    {
+      "name": "Altdaten-Persona 3",
+      "passed": true,
+      "detail": "HTTP 201, erwartet 201"
+    },
+    {
+      "name": "Altdaten kontrolliert: 0001-01-01 00:00:00+00 BC",
+      "passed": true,
+      "detail": "HTTP 500, leerer Body"
+    },
+    {
+      "name": "Altdaten erhalten: 0001-01-01 00:00:00+00 BC",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Andere Persona nach Altdatenfehler: 0001-01-01 00:00:00+00 BC",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Health nach Altdatenfehler: 0001-01-01 00:00:00+00 BC",
+      "passed": true,
+      "detail": "HTTP 200, erwartet 200"
+    },
+    {
+      "name": "Datenbank-Zeilen nach Grenztests",
+      "passed": true,
+      "detail": "6 Personas, 7 Memories (4 absichtliche Altzeilen)"
+    },
+    {
+      "name": "alpha: Persona nach Neustart",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "alpha: Memory nach Neustart",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "beta: Persona nach Neustart",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "beta: Memory nach Neustart",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Präzisionswert nach Stack-Neustart",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Altdaten nach Neustart: Persona 4",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Altdaten nach Neustart: Persona 5",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Altdaten nach Neustart: Persona 6",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Altdaten nach Neustart: Persona 7",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Logging-Probe mit verworfener Memory",
+      "passed": true,
+      "detail": "HTTP 400, erwartet 400"
+    },
+    {
+      "name": "Keine Testpasswörter oder Memory-Inhalte in Logs nach Neustart",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Keine Panic in Logs nach Neustart",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Migrationswiederholung nach Stack-Neustart",
+      "passed": true,
+      "detail": "Daten nach Neustart vollständig lesbar; SQLx-Migrationen erneut erfolgreich"
+    },
+    {
+      "name": "Migrationen und Zeilen nach Neustart",
+      "passed": true,
+      "detail": "20261027200000|t\n20261028130000|t\n6\n7"
+    },
+    {
+      "name": "Registry-Artefakt stimmt mit Commit überein",
+      "passed": true,
+      "detail": "6494a123520b4be5bc5329ebad6dcdde8683a816"
+    },
+    {
+      "name": "Eigene Abnahmecontainer, Volume und Netzwerk entfernt",
+      "passed": true,
+      "detail": "Bestehender Entwicklungscontainer bleibt erhalten."
+    },
+    {
+      "name": "Temporäres Passwortfile entfernt",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "image": "ghcr.io/skanky0815/the-sara-protocol-backend@sha256:f1f4beed7f952b580dd269a483235b37602ae7f71bda4c030116fe437895e807",
+  "local_image_id": "sha256:f1f4beed7f952b580dd269a483235b37602ae7f71bda4c030116fe437895e807",
+  "local_architecture": "arm64",
+  "image_revision": "6494a123520b4be5bc5329ebad6dcdde8683a816",
+  "verdict": "TECHNISCHE TESTS BESTANDEN; Ricos Freigabe des Abnahmenachweises steht aus. Kein Release-Auftrag."
+}

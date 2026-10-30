@@ -2,7 +2,7 @@
 
 > Status: Implementierungsstand und Zielbild · 30.10.2026 · Dokumentationssprache: Deutsch. Code, API-Bezeichner und Commit-Nachrichten bleiben Englisch.
 
-Diese Übersicht trennt die implementierte lokale Persona-/Memory-API von späteren LLM-, World-State- und Client-Funktionen. Bestehende Architekturentscheidungen werden verlinkt statt dupliziert. Die technische Abnahme ist wegen #50 noch nicht freigegeben.
+Diese Übersicht trennt die implementierte lokale Persona-/Memory-API von späteren LLM-, World-State- und Client-Funktionen. Bestehende Architekturentscheidungen werden verlinkt statt dupliziert. Die technische Registry-Nachprüfung nach #50 besteht; Ricos Abnahmefreigabe steht aus.
 
 ## 1. Einführung und Ziele
 
@@ -51,7 +51,7 @@ HTTP-Routing, Persona-/Memory-Endpunkte und SQLx/PostgreSQL-Persistenz sind impl
 
 ## 6. Laufzeitsicht
 
-Implementiert sind `GET /health`, `POST /personas`, `GET /personas/{id}` und `POST`/`GET /personas/{id}/memories`. Der Dienst verbindet sich vor Öffnen des HTTP-Ports mit PostgreSQL und führt die versionierten Migrationen aus. Persona- und Memory-Anfragen bleiben nach Persona-ID getrennt; Memories speichern Quelle, Ereigniszeit und Bestätigungsstatus. `GET /openapi.json` liefert den am Code generierten Vertrag. API-Fehler und JSON-Schemas sind getestet. Eine Abweichung bei nicht RFC3339-konformen Ereigniszeiten kann Abrufe abbrechen und blockiert als #50 die Abnahme. Authentifizierung und Client-Autorisierung bleiben offen.
+Implementiert sind `GET /health`, `POST /personas`, `GET /personas/{id}` und `POST`/`GET /personas/{id}/memories`. Der Dienst verbindet sich vor Öffnen des HTTP-Ports mit PostgreSQL und führt die versionierten Migrationen aus. Persona- und Memory-Anfragen bleiben nach Persona-ID getrennt; Memories speichern Quelle, Ereigniszeit und Bestätigungsstatus. `GET /openapi.json` liefert den am Code generierten Vertrag. API-Fehler und JSON-Schemas sind getestet. RFC3339-Zeitangaben werden vor dem Schreiben validiert; nicht unterstützte Altwerte erzeugen kontrollierte 500-Antworten (Fix #50 / PR #52). Authentifizierung und Client-Autorisierung bleiben offen.
 
 ## 7. Verteilungssicht
 
@@ -72,13 +72,13 @@ Siehe [ADR-Verzeichnis](../adr/README.md), insbesondere Rust/Axum, PostgreSQL/JS
 
 ## 10. Qualitätsanforderungen
 
-Nachvollziehbare Datenherkunft, sichere Trennung mehrerer Personas, reproduzierbares lokales Setup und testbare API. Die [technischen Abnahmebelege](../acceptance/2026-10-30-sprint0.md) prüfen Registry-Image, APIs, Provenienz, beidseitige Isolation und Persistenz nach vollständigem Stack-Neustart. Normale Fälle bestehen; die Zeitstempel-Grenzfälle sind noch fehlerhaft. Native Build-/Packaging-Messwerte sind im gemergten PR #49 dokumentiert; daraus wird keine garantierte Laufzeit abgeleitet.
+Nachvollziehbare Datenherkunft, sichere Trennung mehrerer Personas, reproduzierbares lokales Setup und testbare API. Die [technischen Abnahmebelege](../acceptance/2026-10-30-sprint0-retest.md) prüfen Registry-Image, APIs, Provenienz, beidseitige Isolation und Persistenz nach vollständigem Stack-Neustart. Kernfälle und Zeitstempel-Grenzfälle bestehen nach Fix #50. Native Build-/Packaging-Messwerte sind im gemergten PR #49 dokumentiert; daraus wird keine garantierte Laufzeit abgeleitet.
 
 ## 11. Risiken und technische Schulden
 
 - LLM-Latenz und Retrieval-Qualität könnten wichtiger sein als die Wahl der Implementierungssprache.
 - Authentifizierung, Rechtekonzept, Backup, Embeddings und Datenmodell sind noch offen.
-- Der erste vollständige Registry-Image-Abnahmelauf ist dokumentiert, aber wegen des Zeitstempel-Blockers #50 noch nicht freigegeben. Release-/Versions-PR-Betriebsnachweise #44/#47 stehen ebenfalls noch aus.
+- Die Registry-Image-Nachprüfung nach Fix #50 besteht; die Freigabe durch Rico steht aus. Release-/Versions-PR-Betriebsnachweise #44/#47 stehen ebenfalls noch aus.
 - Keine unkontrollierten Persona-Änderungen oder System-Root-Rechte.
 
 ## 12. Glossar
