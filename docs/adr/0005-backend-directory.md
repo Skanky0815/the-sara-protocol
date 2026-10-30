@@ -1,7 +1,7 @@
 # ADR 0005: Backend-Verzeichnis im Monorepo
 
 - Datum: 2026-10-28
-- Status: Proposed
+- Status: Vorgeschlagen
 - Dokumentiert von: Sara
 - Bezug: [Issue #31](https://github.com/Skanky0815/the-sara-protocol/issues/31)
 

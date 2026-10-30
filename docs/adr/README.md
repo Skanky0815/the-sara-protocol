@@ -1,19 +1,18 @@
-# Architecture Decision Records (ADRs)
+# Architekturentscheidungen (ADRs)
 
-We document significant technical decisions as immutable, numbered Markdown records. New decisions begin as Proposed; once accepted, update status to Accepted. Superseded decisions remain for history and link to their replacements.
+Wesentliche technische Entscheidungen werden als unveränderliche, nummerierte Markdown-Dokumente festgehalten. Neue Entscheidungen beginnen als „Vorgeschlagen“; nach Annahme wird der Status auf „Akzeptiert“ gesetzt. Die bisherigen Statuswerte `Proposed` und `Accepted` werden bei Übersetzungen als „Vorgeschlagen“ und „Akzeptiert“ wiedergegeben. Abgelöste Entscheidungen bleiben als Historie erhalten und verweisen auf ihre Nachfolger. Redaktionelle Übersetzungen ändern den Entscheidungsinhalt und den Status nicht.
 
-Template: `NNNN-short-title.md`
+Vorlage: `NNNN-short-title.md`
 
-Each ADR records date, status, context, decision, alternatives, consequences and authorship/provenance.
+Jeder ADR hält Datum, Status, Kontext, Entscheidung, Alternativen, Konsequenzen und Urheberschaft/Herkunft fest. Die [ADR-Vorlage](template.md) enthält die deutsche Grundstruktur.
 
-## Index
-- [0001 – Rust web service with Axum](0001-rust-axum.md) — Accepted (documented retroactively)
-- [0002 – PostgreSQL JSONB with optional pgvector](0002-postgresql-jsonb.md) — Accepted (documented retroactively)
-- [0003 – AI contribution attribution](0003-ai-contribution-attribution.md) — Proposed
-- [0004 – Runtime migration loading without SQLx macros](0004-runtime-migrations.md) — Proposed
-- [0005 – Backend-Verzeichnis im Monorepo](0005-backend-directory.md) — Proposed
-- [0006 – OpenAPI aus Handlern und Datentypen generieren](0006-generated-openapi.md) — Proposed
+## Verzeichnis
+- [0001 – Rust-Webdienst mit Axum](0001-rust-axum.md) — Akzeptiert (nachträglich dokumentiert)
+- [0002 – PostgreSQL mit JSONB und optionalem pgvector](0002-postgresql-jsonb.md) — Akzeptiert (nachträglich dokumentiert)
+- [0003 – Kennzeichnung von KI-Beiträgen](0003-ai-contribution-attribution.md) — Vorgeschlagen
+- [0004 – Migrationen zur Laufzeit ohne SQLx-Makros laden](0004-runtime-migrations.md) — Vorgeschlagen
+- [0005 – Backend-Verzeichnis im Monorepo](0005-backend-directory.md) — Vorgeschlagen
+- [0006 – OpenAPI aus Handlern und Datentypen generieren](0006-generated-openapi.md) — Vorgeschlagen
+- [0007 – Konfigurierbarer Migrationspfad](0007-configurable-migrations.md) — Vorgeschlagen
 
-Authorship in an ADR is a documentation claim, not proof of Git commit authorship. GitHub connector commits may use the integration identity; do not spoof a human or claim an AI GitHub account exists.
-
-- [0007 – Konfigurierbarer Migrationspfad](0007-configurable-migrations.md) — Proposed
+Die Angabe der Urheberschaft in einem ADR ist eine Dokumentationsaussage und kein Beweis der Git-Commit-Urheberschaft. GitHub-Connector-Commits können die Identität der Integration verwenden; keine menschliche Identität vortäuschen oder die Existenz eines KI-GitHub-Kontos behaupten.

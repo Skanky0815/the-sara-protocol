@@ -1,7 +1,7 @@
 # ADR 0007: Konfigurierbarer Migrationspfad
 
 - Datum: 2026-10-30
-- Status: Proposed
+- Status: Vorgeschlagen
 - Dokumentiert von: Sara (KI-Assistentin)
 
 ## Kontext

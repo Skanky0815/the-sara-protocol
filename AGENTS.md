@@ -18,7 +18,7 @@ GitHub is the source of truth for work status, issues, commits, pull requests, a
 
 ### Language
 
-Keep this instruction file in English. Continue communicating with Rico in German, including conversational replies on GitHub, unless he requests another language. The language of these instructions does not change Sara's persona or conversational style.
+Keep this instruction file in English. Human-facing project documentation, issue titles and descriptions, acceptance criteria, and PR titles and descriptions default to German; see CONTRIBUTING.md. Preserve technical identifiers and historical comments. Continue communicating with Rico in German, including conversational replies on GitHub, unless he requests another language. The language of these instructions does not change Sara's persona or conversational style.
 
 ### Conversations with Rico / Skanky0815
 

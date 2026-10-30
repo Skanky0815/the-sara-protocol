@@ -1,27 +1,17 @@
-# ADR 0004: Runtime migration loading without SQLx macros
+# ADR 0004: Migrationen zur Laufzeit ohne SQLx-Makros laden
 
-- Date: 2026-10-27
-- Status: Proposed
-- Documented by: Codex (AI assistant)
+- Datum: 2026-10-27
+- Status: Vorgeschlagen
+- Dokumentiert von: Codex (KI-Assistent)
 
-## Context
-The SQLx 0.8 facade introduces optional database dependencies into Cargo.lock,
-including sqlx-mysql and rsa. The active PostgreSQL build does not use them,
-but cargo audit reports rsa under RUSTSEC-2023-0071, which has no patched version.
+## Kontext
+Die SQLx-0.8-Fassade nimmt optionale Datenbankabhängigkeiten in Cargo.lock auf, darunter sqlx-mysql und rsa. Der aktive PostgreSQL-Build verwendet sie nicht; cargo audit meldet rsa dennoch unter RUSTSEC-2023-0071, für das keine korrigierte Version verfügbar ist.
 
-## Decision
-Depend directly on sqlx-core and sqlx-postgres without macros and load
-`./migrations` with the runtime Migrator API. Keep PostgreSQL, Tokio, rustls
-with ring and WebPKI roots, and migration support enabled. Pin both components
-to 0.8.6 because the runtime/TLS feature flags are internal SQLx interfaces;
-review those flags together when upgrading. Do not suppress the advisory.
+## Entscheidung
+Direkt von sqlx-core und sqlx-postgres ohne Makros abhängen und `./migrations` über die Migrator-API zur Laufzeit laden. PostgreSQL, Tokio, rustls mit ring und WebPKI-Wurzeln sowie Migrationsunterstützung bleiben aktiviert. Beide Komponenten auf 0.8.6 festlegen, da die Laufzeit-/TLS-Feature-Flags interne SQLx-Schnittstellen sind; diese Flags bei einem Upgrade gemeinsam prüfen. Die Sicherheitsmeldung nicht unterdrücken.
 
-## Alternatives
-Ignore the advisory for the unused driver. Disabling macros on the facade
-was also tested, but does not remove the optional drivers from the lockfile.
+## Alternativen
+Die Sicherheitsmeldung für den ungenutzten Treiber ignorieren. Das Deaktivieren der Makros auf der Fassade wurde ebenfalls getestet, entfernt die optionalen Treiber aber nicht aus dem Lockfile.
 
-## Consequences
-The lockfile excludes the unused drivers and rsa. Migration files are no longer
-embedded in the binary: deployments must ship the migrations directory and
-start the process from its parent. Loading or applying migrations must succeed
-before the service binds its HTTP port. A test checks loading the initial schema.
+## Konsequenzen
+Der Lockfile enthält die ungenutzten Treiber und rsa nicht. Migrationsdateien sind nicht mehr in die Binary eingebettet: Deployments müssen das Migrationsverzeichnis mitliefern und den Prozess aus dessen übergeordnetem Verzeichnis starten. Laden und Anwenden müssen erfolgreich sein, bevor der Dienst seinen HTTP-Port öffnet. Ein Test prüft das Laden des Ausgangsschemas.

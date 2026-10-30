@@ -1,18 +1,18 @@
-# ADR 0001: Rust web service with Axum
+# ADR 0001: Rust-Webdienst mit Axum
 
-- Date: 2026-10-27 (retrospective record)
-- Status: Accepted
-- Decision participants: Rico and Sara (AI assistant)
-- Documented by: Sara (AI assistant)
+- Datum: 2026-10-27 (nachträglich dokumentiert)
+- Status: Akzeptiert
+- An der Entscheidung beteiligt: Rico und Sara (KI-Assistentin)
+- Dokumentiert von: Sara (KI-Assistentin)
 
-## Context
-The Sara Protocol needs a small, performant local-first REST service for personas and memories, initially developed on macOS.
+## Kontext
+The Sara Protocol benötigt einen kleinen, leistungsfähigen, primär lokal betriebenen REST-Dienst für Personas und Erinnerungen. Die erste Entwicklung erfolgt unter macOS.
 
-## Decision
-Use Rust with Axum, Tokio, Serde and SQLx for the initial service.
+## Entscheidung
+Rust mit Axum, Tokio, Serde und SQLx für den ersten Dienst verwenden.
 
-## Alternatives
-Kotlin/Spring Boot and TypeScript/Fastify were considered.
+## Alternativen
+Kotlin/Spring Boot und TypeScript/Fastify wurden erwogen.
 
-## Consequences
-Strong type safety and low runtime overhead, with added Rust learning/build complexity. LLM latency and retrieval quality may dominate end-to-end performance.
+## Konsequenzen
+Hohe Typsicherheit und geringer Laufzeitaufwand gehen mit zusätzlichem Lern- und Build-Aufwand für Rust einher. LLM-Latenz und die Qualität des Abrufs können die Gesamtleistung stärker bestimmen.
