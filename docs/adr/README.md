@@ -14,5 +14,6 @@ Jeder ADR hält Datum, Status, Kontext, Entscheidung, Alternativen, Konsequenzen
 - [0005 – Backend-Verzeichnis im Monorepo](0005-backend-directory.md) — Vorgeschlagen
 - [0006 – OpenAPI aus Handlern und Datentypen generieren](0006-generated-openapi.md) — Vorgeschlagen
 - [0007 – Konfigurierbarer Migrationspfad](0007-configurable-migrations.md) — Vorgeschlagen
+- [0008 – Unabhängige Komponentenversionen und bewusste Releases](0008-component-releases.md) — Vorgeschlagen
 
 Die Angabe der Urheberschaft in einem ADR ist eine Dokumentationsaussage und kein Beweis der Git-Commit-Urheberschaft. GitHub-Connector-Commits können die Identität der Integration verwenden; keine menschliche Identität vortäuschen oder die Existenz eines KI-GitHub-Kontos behaupten.

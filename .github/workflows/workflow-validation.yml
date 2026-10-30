@@ -31,4 +31,4 @@ jobs:
       - name: Install pytest
         run: python -m pip install pytest==8.3.5
       - name: Unit tests
-        run: python -m pytest -q .github/tests/test_pr_feedback_intake.py
+        run: python -m pytest -q .github/tests

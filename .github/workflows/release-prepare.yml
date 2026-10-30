@@ -1,0 +1,45 @@
+name: Prepare component release
+
+on:
+  workflow_dispatch:
+    inputs:
+      component:
+        description: Komponente (Frontend ist noch nicht freigeschaltet)
+        type: choice
+        options: [backend, frontend]
+        default: backend
+        required: true
+      bump:
+        description: Versionssprung (initial behält 0.1.0 für den ersten Release)
+        type: choice
+        options: [initial, patch, minor, major]
+        required: true
+
+permissions: {}
+
+concurrency:
+  group: component-release-backend
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Versions-PR erstellen und QA anstoßen
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COMPONENT: ${{ inputs.component }}
+          BUMP: ${{ inputs.bump }}
+        run: python .github/scripts/component_release.py prepare
