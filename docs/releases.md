@@ -30,7 +30,13 @@ Frontend wird nicht vorbereitet; die Workflow-Auswahl führt ohne vorhandene Imp
 
 ## Abnahme ohne lokalen Build
 
-Nach erfolgreicher main-QA baut **Backend delivery** mit offiziellen Docker-Actions ein Image für `linux/amd64` und `linux/arm64`. Auf dem nativen amd64-Runner wird der Container zunächst isoliert gestartet und neu gestartet. Nach dem Multiarch-Push wird auch der tatsächliche Registry-Digest gezogen und erneut gestartet. ARM64 wird gebaut; ein ARM64-Laufzeittest erfolgt bei der Abnahme auf dem entsprechenden Rechner. QEMU-Builds können länger dauern.
+Nach erfolgreicher main-QA baut **Backend delivery** die Release-Binaries in parallelen Jobs auf nativen `ubuntu-24.04`- und `ubuntu-24.04-arm`-Runnern. Der Cargo-Build läuft jeweils in `rust:1.98-bookworm`, sodass die glibc-Umgebung zum Debian-Bookworm-Runtime-Image passt. Ein architekturspezifischer Cargo-Cache hält Abhängigkeiten für spätere Läufe vor; main speichert keine von PRs erzeugten Cargo-Caches. Es wird kein Rust unter QEMU kompiliert.
+
+Die nachfolgenden Image-Jobs laufen ebenfalls nativ. Sie übernehmen ausschließlich Binary-Artefakte aus demselben Workflow-Lauf und prüfen Commit-SHA, Architektur, SHA256 und ELF-Header. `backend/Dockerfile.runtime` kopiert die fertige Binary und Migrationen; er enthält keinen Rust-Compiler oder Cargo-Aufruf. Beide Architekturimages werden per Compose gestartet und neu gestartet. Danach werden die geprüften Images als unkomprimierte Docker-Artefakte mit SHA-/Architektur-/Prüfsummen-Metadaten für einen Tag gespeichert.
+
+Nur der main-Publisher lädt diese gleichlaufenden Image-Artefakte, prüft sie erneut, pusht die beiden nativen Images und setzt mit Docker Buildx den Multiarch-Index zusammen. Er kompiliert und baut keine Images erneut. Zwischen-Tags `build-<run>-<attempt>-<arch>` dienen der Manifest-Zusammenstellung; für die Abnahme wird ausschließlich die unten beschriebene Commit-/Digest-Referenz verwendet. Bestehende Commit-Tags bleiben erhalten. Die Release-Übernahme verwendet weiterhin denselben Digest. Der bisherige `backend/Dockerfile` bleibt für einen lokalen Build aus Quellcode verfügbar.
+
+PRs verwenden dieselben getrennten Build-/Image-Prüfungen mit reinen Leserechten, aber keinen Registry-Publisher. Der zusätzliche Artefakttransfer ist Teil der Pipeline-Laufzeit. Ein Kaltstart muss beide Architekturen zunächst vollständig kompilieren; eine konkrete Beschleunigung wird erst anhand tatsächlicher Läufe beurteilt. Siehe [ADR 0009](adr/0009-native-backend-builds.md).
 
 Commit-Images heißen `ghcr.io/skanky0815/the-sara-protocol-backend:sha-<vollständige Commit-SHA>`. Ein vorhandenes Commit-Image wird wiederverwendet. Der Workflow gibt im Job-Summary die genaue Referenz `ghcr.io/...@sha256:...` aus. **Für die Abnahme diesen Digest verwenden**, da Tags grundsätzlich Registry-Referenzen sind. Commit-Images sind noch keine stabilen Releases und benötigen nicht die bereits abgeschlossene Abnahme; sonst könnte die erste Abnahme nicht stattfinden.
 
@@ -72,7 +78,7 @@ Bei einem Teilfehler denselben ursprünglichen Rust-QA-main-Lauf erneut ausführ
 
 ## Validierung und verbleibender Betriebsnachweis
 
-Workflow validation führt `actionlint`, bestehende Python-Tests sowie Node-Tests für unsere QA-Grenzen und die tatsächlichen Release-Please-Updater mit den echten Cargo-Dateien aus. **Backend image check** baut PR-Images und testet Containerstart/Neustart ohne Registry-Schreibrechte. Die Release-Please-Konfiguration wurde mit der vereinbarten 0.x-Regel geprüft.
+Workflow validation führt `actionlint`, bestehende Python-Tests sowie Node-Tests für unsere QA-Grenzen und die tatsächlichen Release-Please-Updater mit den echten Cargo-Dateien aus. **Backend image check** baut native Release-Binaries und paketiert PR-Images für beide Architekturen; Containerstart/Neustart erfolgen ohne Registry-Schreibrechte. Die Release-Please-Konfiguration wurde mit der vereinbarten 0.x-Regel geprüft.
 
 Der echte GITHUB_TOKEN-Versions-PR, dessen QA-Dispatch, die erste GHCR-Multiarch-Veröffentlichung und der Pull auf dem Abnahmerechner können erst nach Workflow-Merge und den erforderlichen Berechtigungen nachgewiesen werden. #44 und #47 bleiben bis zu diesen Nachweisen offen. Dieser Implementierungs-PR erzeugt weder einen Release noch einen Tag oder ein GHCR-Image.
 

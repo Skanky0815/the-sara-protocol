@@ -1,0 +1,126 @@
+name: Native backend artifacts
+on:
+  workflow_call:
+    inputs:
+      source-sha:
+        type: string
+        required: true
+permissions:
+  contents: read
+jobs:
+  binary:
+    name: Release binary (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+            machine: x86_64
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+            machine: aarch64
+    runs-on: ${{ matrix.runner }}
+    container: rust:1.98-bookworm
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source-sha }}
+          persist-credentials: false
+      - name: Native Buildumgebung und Commit prüfen
+        env:
+          SOURCE_SHA: ${{ inputs.source-sha }}
+          MACHINE: ${{ matrix.machine }}
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          test "$(uname -m)" = "$MACHINE"
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: backend -> target
+          key: release-bookworm-rust198-${{ matrix.arch }}
+          save-if: ${{ github.event_name != 'pull_request' }}
+      - name: Release-Binary einmalig kompilieren
+        working-directory: backend
+        run: cargo build --release --locked
+      - name: Binary-Artefakt vorbereiten
+        env:
+          SOURCE_SHA: ${{ inputs.source-sha }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          mkdir -p binary
+          cp backend/target/release/the-sara-protocol binary/
+          checksum=$(sha256sum binary/the-sara-protocol | cut -d ' ' -f1)
+          printf '{"source_sha":"%s","architecture":"%s","kind":"binary","sha256":"%s"}\n' "$SOURCE_SHA" "$ARCH" "$checksum" > binary/metadata.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: backend-binary-${{ inputs.source-sha }}-${{ matrix.arch }}-${{ github.run_id }}
+          path: binary/
+          overwrite: true
+          retention-days: 1
+          if-no-files-found: error
+  image:
+    name: Runtime image (${{ matrix.arch }})
+    needs: binary
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source-sha }}
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: backend-binary-${{ inputs.source-sha }}-${{ matrix.arch }}-${{ github.run_id }}
+          path: package/
+      - name: Binary prüfen und Runtime-Kontext ergänzen
+        env:
+          SOURCE_SHA: ${{ inputs.source-sha }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          python3 .github/scripts/verify-backend-artifact.py package "$SOURCE_SHA" "$ARCH" binary
+          cp -R backend/migrations package/migrations
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
+        with:
+          context: package
+          file: backend/Dockerfile.runtime
+          platforms: linux/${{ matrix.arch }}
+          load: true
+          tags: sara-backend:smoke
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ inputs.source-sha }}
+          cache-from: type=gha,scope=runtime-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=runtime-${{ matrix.arch }}
+      - run: docker pull postgres:17
+      - name: Natives Runtime-Image starten und neu starten
+        env:
+          BACKEND_IMAGE: sara-backend:smoke
+        run: .github/scripts/container-smoke.sh
+      - name: Geprüftes Runtime-Image als Artefakt sichern
+        env:
+          SOURCE_SHA: ${{ inputs.source-sha }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          mkdir -p runtime
+          docker save --output runtime/image.tar sara-backend:smoke
+          checksum=$(sha256sum runtime/image.tar | cut -d ' ' -f1)
+          printf '{"source_sha":"%s","architecture":"%s","kind":"image","sha256":"%s"}\n' "$SOURCE_SHA" "$ARCH" "$checksum" > runtime/metadata.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: backend-runtime-${{ inputs.source-sha }}-${{ matrix.arch }}-${{ github.run_id }}
+          path: runtime/
+          overwrite: true
+          retention-days: 1
+          compression-level: 0
+          if-no-files-found: error

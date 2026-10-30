@@ -145,3 +145,5 @@ Das Deployment muss sämtliche versionierten SQL-Dateien aus `backend/migrations
 ## Vorgebaute Abnahmeimages
 
 Für die Abnahme ohne lokale Rust-Toolchain oder Image-Build die eigenständige `compose.acceptance.yaml` verwenden. Image-Digest, GHCR-Zugriff, isoliertes Datenbankvolume und Start-/Neustartbefehle beschreibt die [Release-Anleitung](releases.md#abnahme-ohne-lokalen-build). Die bisherige `compose.yaml` bleibt für lokale Entwicklung mit Build erhalten.
+
+Die CI trennt den nativen Release-Build je Architektur vom reinen Runtime-Packaging (`backend/Dockerfile.runtime`). Für einen lokalen Quellcode-Build wird weiterhin `backend/Dockerfile` verwendet; die Abnahme mit GHCR-Digest benötigt beide Build-Wege nicht.
