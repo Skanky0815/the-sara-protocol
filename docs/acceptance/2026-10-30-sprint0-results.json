@@ -1,0 +1,237 @@
+{
+  "source_commit": "8ec0092b48f27b691efc33c56f2d1f18c10c41b2",
+  "image": "ghcr.io/skanky0815/the-sara-protocol-backend@sha256:2561ea5dd84c1fbe748c3a6aad9c265cacb0ef5c6712318699da43e4e095deb0",
+  "architecture": "arm64",
+  "os": "linux",
+  "runtime_user": "sara",
+  "postgres_image": "postgres@sha256:31ba9c94a03ada9988f2bb493a22a75eef3a185884533e5cdbcd498ea835b08f",
+  "compose_project": "sara-sprint0-acceptance-20261030",
+  "port": 53043,
+  "working_directory": "/tmp",
+  "checks": [
+    {
+      "name": "Health",
+      "passed": true,
+      "detail": "HTTP 200, erwartet 200"
+    },
+    {
+      "name": "Health-Body",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "OpenAPI",
+      "passed": true,
+      "detail": "HTTP 200, erwartet 200"
+    },
+    {
+      "name": "OpenAPI-Pfade",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Persona Alpha erstellen",
+      "passed": true,
+      "detail": "HTTP 201, erwartet 201"
+    },
+    {
+      "name": "Persona Beta erstellen",
+      "passed": true,
+      "detail": "HTTP 201, erwartet 201"
+    },
+    {
+      "name": "Name-Normalisierung und Location",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Persona gezielt lesen",
+      "passed": true,
+      "detail": "HTTP 200, erwartet 200"
+    },
+    {
+      "name": "Persona-Roundtrip",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Namenskonflikt",
+      "passed": true,
+      "detail": "HTTP 409, erwartet 409"
+    },
+    {
+      "name": "Leerer Name",
+      "passed": true,
+      "detail": "HTTP 400, erwartet 400"
+    },
+    {
+      "name": "Unbekanntes Persona-Feld",
+      "passed": true,
+      "detail": "HTTP 422, erwartet 422"
+    },
+    {
+      "name": "Unbekannte Persona",
+      "passed": true,
+      "detail": "HTTP 404, erwartet 404"
+    },
+    {
+      "name": "Nichtpositive Persona-ID",
+      "passed": true,
+      "detail": "HTTP 400, erwartet 400"
+    },
+    {
+      "name": "Bestätigte Memory",
+      "passed": true,
+      "detail": "HTTP 201, erwartet 201"
+    },
+    {
+      "name": "Abgeleitete Memory",
+      "passed": true,
+      "detail": "HTTP 201, erwartet 201"
+    },
+    {
+      "name": "Provenienz und Zeitzonen-Normalisierung",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Inferred bleibt inferred",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Alpha-Memories lesen",
+      "passed": true,
+      "detail": "HTTP 200, erwartet 200"
+    },
+    {
+      "name": "Beta-Memories lesen",
+      "passed": true,
+      "detail": "HTTP 200, erwartet 200"
+    },
+    {
+      "name": "Persona-Isolation beidseitig",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Leerer Inhalt",
+      "passed": true,
+      "detail": "HTTP 400, erwartet 400"
+    },
+    {
+      "name": "Leere Quelle",
+      "passed": true,
+      "detail": "HTTP 400, erwartet 400"
+    },
+    {
+      "name": "Ungültiger Zeitstempel",
+      "passed": true,
+      "detail": "HTTP 400, erwartet 400"
+    },
+    {
+      "name": "Ungültiger Bestätigungsstatus",
+      "passed": true,
+      "detail": "HTTP 422, erwartet 422"
+    },
+    {
+      "name": "Abgelehnte Requests schreiben nichts",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Memory für unbekannte Persona",
+      "passed": true,
+      "detail": "HTTP 404, erwartet 404"
+    },
+    {
+      "name": "Memory für ID null",
+      "passed": true,
+      "detail": "HTTP 400, erwartet 400"
+    },
+    {
+      "name": "Falscher Content-Type",
+      "passed": true,
+      "detail": "HTTP 415, erwartet 415"
+    },
+    {
+      "name": "Fehlerhaftes JSON",
+      "passed": true,
+      "detail": "HTTP 400, erwartet 400"
+    },
+    {
+      "name": "Vor Neustart persistenter Sollzustand",
+      "passed": true,
+      "detail": "2 Personas, 2 Memories"
+    },
+    {
+      "name": "alpha: Persona nach Neustart",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "alpha: Memory nach Neustart",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "beta: Persona nach Neustart",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "beta: Memory nach Neustart",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "RFC3339-Grenze: 2026-10-30",
+      "passed": false,
+      "detail": "HTTP 201, erwartet 400"
+    },
+    {
+      "name": "Persistierte Grenzprobe: 2026-10-30",
+      "passed": false,
+      "detail": "Memory-ID 4; Antwortzeit 2026-10-30T00:00:00.000000Z"
+    },
+    {
+      "name": "RFC3339-Grenze: infinity",
+      "passed": false,
+      "detail": "Verbindung ohne HTTP-Antwort geschlossen; Datenbank enthält beobachteten Wert infinity."
+    },
+    {
+      "name": "Memory-Abruf nach infinity",
+      "passed": false,
+      "detail": "RemoteDisconnected"
+    },
+    {
+      "name": "Datenbankinitialisierung",
+      "passed": true,
+      "detail": "Beide SQLx-Migrationen erfolgreich; vor API-Test 0 Personas und 0 Memories."
+    },
+    {
+      "name": "Unprivilegierter Start aus fremdem Arbeitsverzeichnis",
+      "passed": true,
+      "detail": "UID 10001, /tmp, MIGRATIONS_DIR=/app/backend/migrations."
+    },
+    {
+      "name": "Keine Testpasswörter oder Memory-Inhalte in strukturierten Logs",
+      "passed": true,
+      "detail": "Automatischer Vergleich ohne Wiedergabe des Passworts."
+    },
+    {
+      "name": "Andere Persona bleibt nach infinity lesbar",
+      "passed": true,
+      "detail": "Beta-Memory unverändert; Fehler betrifft Alpha-Liste."
+    }
+  ],
+  "local_image_id": "sha256:2561ea5dd84c1fbe748c3a6aad9c265cacb0ef5c6712318699da43e4e095deb0",
+  "verdict": "BLOCKED: RFC3339-/infinity-Abweichung, Issue #50. Keine technische Freigabe.",
+  "blocker_issue": 50,
+  "cleanup": {
+    "compose_project_removed": true,
+    "test_volume_removed": true,
+    "temporary_password_file_removed": true,
+    "existing_development_postgres_still_running": true
+  }
+}
