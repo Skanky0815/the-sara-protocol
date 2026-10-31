@@ -76,16 +76,38 @@ test('Release Please aktualisiert echte Cargo-Dateien und unsere 0.x-Versionen',
  assert.deepEqual(Object.keys(config.packages),['backend']);
 });
 
-test('Manifest-Konfiguration wird von Release Please selbst korrekt geladen', async()=>{
+async function loadManifestForTest(versions) {
  const {Manifest}=require('release-please');
- const github={repository:{owner:'owner',repo:'repo'},getFileJson:async p=>JSON.parse(fs.readFileSync(path.join(root,p),'utf8')),getFileContentsOnBranch:async p=>{
-  const parsedContent=fs.readFileSync(path.join(root,p),'utf8');return {parsedContent,content:Buffer.from(parsedContent).toString('base64'),sha:'fixture'};
+ const readFile=p=>p==='.release-please-manifest.json' && versions!==undefined
+  ? JSON.stringify(versions)
+  : fs.readFileSync(path.join(root,p),'utf8');
+ const github={repository:{owner:'owner',repo:'repo'},getFileJson:async p=>JSON.parse(readFile(p)),getFileContentsOnBranch:async p=>{
+  const parsedContent=readFile(p);return {parsedContent,content:Buffer.from(parsedContent).toString('base64'),sha:'fixture'};
  }};
- const manifest=await Manifest.fromManifest(github,'main');
+ return Manifest.fromManifest(github,'main');
+}
+
+function versionStrings(manifest) {
+ return Object.fromEntries(Object.entries(manifest.releasedVersions).map(([component,version])=>[component,version.toString()]));
+}
+
+test('Manifest-Konfiguration und Versionen des Checkouts werden korrekt geladen', async()=>{
+ const manifest=await loadManifestForTest();
  assert.equal(manifest.repositoryConfig.backend.releaseType,'rust');
  assert.equal(manifest.repositoryConfig.backend.tagSeparator,'/');
  assert.equal(manifest.repositoryConfig.backend.bumpMinorPreMajor,true);
  assert.equal(manifest.repositoryConfig.backend.bumpPatchForMinorPreMajor,true);
  assert.equal(manifest.repositoryConfig.backend.initialVersion,'0.1.0');
- assert.deepEqual(manifest.releasedVersions,{});
+ const expected=JSON.parse(fs.readFileSync(path.join(root,'.release-please-manifest.json'),'utf8'));
+ assert.deepEqual(versionStrings(manifest),expected);
+});
+
+test('Release Please lädt das leere Bootstrap-Manifest', async()=>{
+ assert.deepEqual(versionStrings(await loadManifestForTest({})),{});
+});
+
+test('Release Please übernimmt befüllte Komponenten-Versionen unverändert', async()=>{
+ for(const version of ['0.1.0','0.2.1','1.2.3']) {
+  assert.deepEqual(versionStrings(await loadManifestForTest({backend:version})),{backend:version});
+ }
 });

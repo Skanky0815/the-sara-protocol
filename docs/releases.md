@@ -78,7 +78,7 @@ Bei einem Teilfehler denselben ursprünglichen Rust-QA-main-Lauf erneut ausführ
 
 ## Validierung und verbleibender Betriebsnachweis
 
-Workflow validation führt `actionlint`, bestehende Python-Tests sowie Node-Tests für unsere QA-Grenzen und die tatsächlichen Release-Please-Updater mit den echten Cargo-Dateien aus. **Backend image check** baut native Release-Binaries und paketiert PR-Images für beide Architekturen; Containerstart/Neustart erfolgen ohne Registry-Schreibrechte. Die Release-Please-Konfiguration wurde mit der vereinbarten 0.x-Regel geprüft.
+Workflow validation führt `actionlint`, bestehende Python-Tests sowie Node-Tests für unsere QA-Grenzen und die tatsächlichen Release-Please-Updater mit den echten Cargo-Dateien aus. **Backend image check** baut native Release-Binaries und paketiert PR-Images für beide Architekturen; Containerstart/Neustart erfolgen ohne Registry-Schreibrechte. Die Release-Please-Konfiguration wurde mit der vereinbarten 0.x-Regel geprüft. Manifest-Tests decken sowohl den leeren Bootstrap-Zustand als auch befüllte Komponenten-Versionen ab und vergleichen das Manifest des jeweiligen Checkouts mit dem Ergebnis des echten Release-Please-Loaders.
 
 Der echte GITHUB_TOKEN-Versions-PR, dessen QA-Dispatch, die erste GHCR-Multiarch-Veröffentlichung und der Pull auf dem Abnahmerechner können erst nach Workflow-Merge und den erforderlichen Berechtigungen nachgewiesen werden. #44 und #47 bleiben bis zu diesen Nachweisen offen. Dieser Implementierungs-PR erzeugt weder einen Release noch einen Tag oder ein GHCR-Image.
 
