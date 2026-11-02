@@ -8,14 +8,14 @@ curl --fail http://127.0.0.1:3000/openapi.json
 curl --fail http://127.0.0.1:3000/openapi.json -o /tmp/sara-openapi.json
 ```
 
-Die normale Backend-Instanz dokumentiert die fünf fachlichen Operationen für Health, Personas und Memories. Die JSON-Referenz selbst ist ein Metadaten-Endpunkt und wird nicht rekursiv in ihren eigenen Vertrag aufgenommen. Die nur in Tests verwendete Health-App dokumentiert entsprechend nur Health. Server-URLs sind relativ (`/`), damit die Referenz keine lokale Host-Adresse festschreibt. Die Referenz führt weder API-Aufrufe aus noch stellt sie eine ChatGPT-Verbindung her.
+Die normale Backend-Instanz dokumentiert die sechs fachlichen Operationen für Health, Personas und Memories. Die JSON-Referenz selbst ist ein Metadaten-Endpunkt und wird nicht rekursiv in ihren eigenen Vertrag aufgenommen. Die nur in Tests verwendete Health-App dokumentiert entsprechend nur Health. Server-URLs sind relativ (`/`), damit die Referenz keine lokale Host-Adresse festschreibt. Die Referenz führt weder API-Aufrufe aus noch stellt sie eine ChatGPT-Verbindung her.
 
 ## Pflege am Code
 
 - `utoipa::ToSchema` beschreibt Request-/Response-Datentypen direkt neben ihren Rust-Definitionen. Serde-Feldregeln, Pflichtfelder und Enum-Werte werden übernommen; Zusatzangaben erklären fachliche Regeln und Zeitformate.
 - `utoipa::path` dokumentiert Operation, Parameter, Statuscodes, Antwortmedien und Header bei jedem Handler. Deutsche Rust-Dokumentationskommentare werden als Beschreibung verwendet.
 - `utoipa-axum` registriert Handler und sammelt deren OpenAPI-Metadaten gemeinsam. Es gibt keine zweite, unabhängig gepflegte Liste von Endpunkten.
-- Unerwartete Datenbankfehler bleiben leere HTTP-Fehlerantworten. Axum-Validierungsfehler können Text enthalten; bei gemischten Validierungsantworten ist der optionale Text-Body beschrieben. Headerfehler, Routing-Fallbacks und implizite HEAD-Unterstützung bleiben Verhalten des HTTP-Frameworks außerhalb der fünf fachlichen Operationen.
+- Unerwartete Datenbankfehler bleiben leere HTTP-Fehlerantworten. Axum-Validierungsfehler können Text enthalten; bei gemischten Validierungsantworten ist der optionale Text-Body beschrieben. Headerfehler, Routing-Fallbacks und implizite HEAD-Unterstützung bleiben Verhalten des HTTP-Frameworks außerhalb der sechs fachlichen Operationen.
 
 Neue Endpunkte werden mit `routes!(handler)` in einem `OpenApiRouter` registriert. Geänderte DTOs und Fehlerpfade müssen zusammen mit den Annotationen angepasst werden. Das Schema ersetzt keine Laufzeitvalidierung und führt keine neue Authentifizierung ein.
 
@@ -47,3 +47,5 @@ Die Einrichtung der Testdatenbank steht in der [Entwicklungsanleitung](getting-s
 `observed_at` muss RFC3339 mit expliziter Zeitzone erfüllen. Der normalisierte UTC-Zeitpunkt muss im Jahr 0001 bis 9999 liegen. Datum ohne Uhrzeit, fehlende Zeitzone, relative PostgreSQL-Ausdrücke und `infinity`/`-infinity` werden vor dem Schreiben mit HTTP 400 abgelehnt. Die Ausgabe erfolgt in UTC mit sechs Nachkommastellen; zusätzliche Nachkommastellen werden bei der Eingabe abgeschnitten.
 
 Bereits vorhandene Zeitwerte außerhalb dieses Vertrags führen beim Lesen der betroffenen Memory-Liste zu einer kontrollierten, leeren HTTP-500-Antwort. Die Daten bleiben erhalten; es werden weder Einträge still ausgeblendet noch automatisch gelöscht. Andere Personas und Health bleiben erreichbar. Eine Bereinigung solcher Altdaten braucht eine gesonderte Entscheidung.
+
+Die generierte Operation `searchMemories` dokumentiert die Query-Parameter, Limits und Antworten der [Memory-Volltextsuche](memory-search.md) unter `GET /personas/{id}/memories/search`.

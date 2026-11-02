@@ -97,6 +97,7 @@ Die Requests liegen jetzt unter [`backend/dev/persona.http`](../backend/dev/pers
 
 - `POST /personas/{id}/memories` erwartet `content`, `source`, `observed_at` (ISO-8601 mit Zeitzone) und `confirmation_status` (`confirmed` oder `inferred`). Erfolgreiche Erstellung: HTTP 201.
 - `GET /personas/{id}/memories` liefert nur die Memories der gewählten Persona, nach ID geordnet.
+- `GET /personas/{id}/memories/search?q=...&limit=20` bietet [deutsche Volltextsuche](memory-search.md) mit Relevanzsortierung, fester Persona-Grenze und maximal 100 Treffern.
 - Unbekannte Persona: HTTP 404. Leerer Inhalt oder Quelle, ungültiger Zeitstempel und nichtpositive Persona-ID: HTTP 400. Nicht unterstützter Bestätigungsstatus: HTTP 422.
 - `created_at` bleibt die Datenbank-Einfügezeit; `observed_at` beschreibt den Zeitpunkt des Quellereignisses.
 

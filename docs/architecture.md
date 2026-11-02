@@ -15,6 +15,7 @@ Portabler Persona- und Memory-Service für ChatGPT, lokale LLMs und IDE-Clients.
 - GET /health
 - POST /personas, GET /personas/{id}
 - POST /personas/{id}/memories, GET /personas/{id}/memories
+- GET /personas/{id}/memories/search?q=... (deutsche Volltextsuche)
 - Migrationen, Tests, lokale OpenAPI-Dokumentation
 
 ## Designprinzipien
@@ -36,3 +37,5 @@ Lokal wird aus `backend/` gestartet. Im Backend-Image liegt `migrations/` unter 
 Die [Persona-API](persona-api.md) verwendet das bestehende Schema ohne Migration: Namen werden validiert und parametrisiert gespeichert, Abrufe durch die Persona-ID eingeschränkt. Memory-Zuordnung und Request-Tracing bleiben erhalten.
 
 Die [OpenAPI-Referenz](api-reference.md) wird gemeinsam mit den Axum-Routen registriert und unter `/openapi.json` ausgeliefert. Handler- und DTO-Annotationen bilden den Vertrag; JSON-Schema-Vertragstests vergleichen echte Antworten damit. Siehe [ADR 0006](adr/0006-generated-openapi.md).
+
+Die [Memory-Suche](memory-search.md) verwendet einen persona-gefilterten PostgreSQL-Volltextindex mit fester deutscher Konfiguration. Rangfolge, Grenzen und Bewertung von pgvector als Folgearbeit stehen in [ADR 0010](adr/0010-persona-memory-full-text-search.md).

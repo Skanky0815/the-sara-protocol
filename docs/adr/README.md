@@ -19,3 +19,4 @@ Jeder ADR hält Datum, Status, Kontext, Entscheidung, Alternativen, Konsequenzen
 - [0009 – Native parallele Backend-Builds und Runtime-Packaging](0009-native-backend-builds.md) — Vorgeschlagen
 
 Die Angabe der Urheberschaft in einem ADR ist eine Dokumentationsaussage und kein Beweis der Git-Commit-Urheberschaft. GitHub-Connector-Commits können die Identität der Integration verwenden; keine menschliche Identität vortäuschen oder die Existenz eines KI-GitHub-Kontos behaupten.
+- [0010 – Persona-spezifische PostgreSQL-Volltextsuche](0010-persona-memory-full-text-search.md) — Vorgeschlagen

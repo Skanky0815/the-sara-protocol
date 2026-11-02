@@ -117,3 +117,26 @@ async fn debug_logs_exclude_headers_queries_parameters_and_bodies() {
         );
     }
 }
+
+#[tokio::test(flavor = "current_thread")]
+async fn search_text_and_persona_id_are_not_logged_even_on_failure() {
+    let (logs, _guard) = Logs::capture(Some("debug"));
+    let response = closed_pool_router()
+        .await
+        .oneshot(
+            Request::builder()
+                .uri("/personas/88442211/memories/search?q=private-search-secret&limit=1")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), 500);
+    assert!(logs
+        .events()
+        .iter()
+        .any(|e| e["span"]["route"] == "/personas/{id}/memories/search"));
+    for forbidden in ["private-search-secret", "88442211", "postgres://"] {
+        assert!(!logs.text().contains(forbidden));
+    }
+}

@@ -3,7 +3,7 @@ use serde_json::json;
 use std::collections::BTreeSet;
 
 #[tokio::test]
-async fn full_document_has_all_five_operations_and_unique_ids() {
+async fn full_document_has_all_six_operations_and_unique_ids() {
     let contract = Contract::offline().await;
     assert_eq!(contract.doc["openapi"], "3.1.0");
     let paths = contract.doc["paths"].as_object().unwrap();
@@ -13,7 +13,8 @@ async fn full_document_has_all_five_operations_and_unique_ids() {
             "/health",
             "/personas",
             "/personas/{id}",
-            "/personas/{id}/memories"
+            "/personas/{id}/memories",
+            "/personas/{id}/memories/search"
         ])
     );
     let ids: Vec<_> = paths
@@ -21,8 +22,8 @@ async fn full_document_has_all_five_operations_and_unique_ids() {
         .flat_map(|path| path.as_object().unwrap().values())
         .map(|operation| operation["operationId"].as_str().unwrap())
         .collect();
-    assert_eq!(ids.len(), 5);
-    assert_eq!(ids.iter().collect::<BTreeSet<_>>().len(), 5);
+    assert_eq!(ids.len(), 6);
+    assert_eq!(ids.iter().collect::<BTreeSet<_>>().len(), 6);
     assert_eq!(contract.doc["servers"][0]["url"], "/");
 }
 
