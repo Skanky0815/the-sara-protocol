@@ -361,3 +361,163 @@ async fn legacy_year_above_9999_returns_500_without_panic_or_deletion() {
 async fn legacy_bc_year_returns_500_instead_of_a_wrong_ad_date() {
     assert_legacy_timestamp_returns_controlled_error("0001-01-01 00:00:00+00 BC").await;
 }
+
+impl TestApp {
+    async fn search(&self, query: &str) -> Response {
+        self.app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri(format!(
+                        "/personas/{}/memories/search?{query}",
+                        self.persona_id
+                    ))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap()
+    }
+
+    async fn create_content(&self, content: &str) -> Value {
+        let mut body = valid_memory();
+        body["content"] = content.into();
+        let response = self.request("POST", self.persona_id, Some(body)).await;
+        assert_eq!(response.status(), StatusCode::CREATED);
+        response_json(response).await
+    }
+}
+
+#[tokio::test]
+async fn full_text_search_matches_german_stems_and_preserves_provenance_and_isolation() {
+    let Some(first) = TestApp::new().await else {
+        return;
+    };
+    let second = TestApp::new().await.unwrap();
+    let matching = first.create_content("Die Katzen schlafen im Garten.").await;
+    first.create_content("Ein Hund spielt im Garten.").await;
+    second
+        .create_content("Die Katzen schlafen im Garten.")
+        .await;
+    let response = first.search("q=KATZE+schlafen").await;
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(response_json(response).await, json!([matching]));
+    let response = first.search("q=Katze+Hund").await;
+    assert_eq!(response_json(response).await, json!([]));
+    // Source/provenance is returned but not part of the searched content.
+    let response = first.search("q=conversation").await;
+    assert_eq!(response_json(response).await, json!([]));
+    first.cleanup().await;
+    second.cleanup().await;
+}
+
+#[tokio::test]
+async fn full_text_search_orders_by_rank_then_id_and_honors_limit() {
+    let Some(test) = TestApp::new().await else {
+        return;
+    };
+    let lower = test.create_content("Kaffee").await;
+    let higher = test.create_content("Kaffee Kaffee Kaffee").await;
+    let tied = test.create_content("Kaffee").await;
+    let response = test.search("q=Kaffee").await;
+    assert_eq!(
+        response_json(response).await,
+        json!([higher.clone(), lower, tied])
+    );
+    let response = test.search("q=Kaffee&limit=1").await;
+    assert_eq!(response_json(response).await, json!([higher]));
+    test.cleanup().await;
+}
+
+#[tokio::test]
+async fn full_text_search_defaults_to_twenty_and_caps_at_one_hundred() {
+    let Some(test) = TestApp::new().await else {
+        return;
+    };
+    sqlx_core::query::query(
+        "INSERT INTO memories(persona_id, content, source) SELECT $1, 'Kaffee', 'synthetic search test' FROM generate_series(1, 101)",
+    ).bind(test.persona_id).execute(&test.pool).await.unwrap();
+    for (query, expected) in [("q=Kaffee", 20), ("q=Kaffee&limit=100", 100)] {
+        let response = test.search(query).await;
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(
+            response_json(response).await.as_array().unwrap().len(),
+            expected
+        );
+    }
+    test.cleanup().await;
+}
+
+#[tokio::test]
+async fn full_text_search_no_matches_stop_words_and_sql_like_text_are_safe() {
+    let Some(test) = TestApp::new().await else {
+        return;
+    };
+    let memory = test.create_content("Eine Katze trinkt Kaffee.").await;
+    for query in [
+        "q=unauffindbar",
+        "q=der+und+die",
+        "q=%21%26%7C",
+        "q=%27%29%3B+DROP+TABLE+memories%3B--",
+    ] {
+        let response = test.search(query).await;
+        assert_eq!(response.status(), StatusCode::OK, "{query}");
+        assert_eq!(response_json(response).await, json!([]), "{query}");
+    }
+    assert_eq!(test.list().await, vec![memory]);
+    test.cleanup().await;
+    let response = test.search("q=Katze").await;
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn full_text_index_covers_existing_rows_and_tracks_content_updates() {
+    let Ok(url) = std::env::var("DATABASE_URL") else {
+        return;
+    };
+    let pool = PgPool::connect(&url).await.unwrap();
+    let mut tx = pool.begin().await.unwrap();
+    // A temporary table shadows public.memories; this never alters app data.
+    sqlx_core::raw_sql::raw_sql("CREATE TEMP TABLE memories (content TEXT NOT NULL) ON COMMIT DROP; INSERT INTO memories VALUES ('Katzen schlafen');")
+        .execute(&mut *tx).await.unwrap();
+    sqlx_core::raw_sql::raw_sql(include_str!(
+        "../migrations/20261102080000_memory_full_text_search.sql"
+    ))
+    .execute(&mut *tx)
+    .await
+    .unwrap();
+    let search = "SELECT count(*) FROM memories WHERE to_tsvector('pg_catalog.german', content) @@ plainto_tsquery('pg_catalog.german', $1)";
+    let (count,): (i64,) = sqlx_core::query_as::query_as(search)
+        .bind("Katze")
+        .fetch_one(&mut *tx)
+        .await
+        .unwrap();
+    assert_eq!(count, 1);
+    sqlx_core::query::query("SET LOCAL enable_seqscan = off")
+        .execute(&mut *tx)
+        .await
+        .unwrap();
+    let plan: Vec<(String,)> = sqlx_core::query_as::query_as(&format!("EXPLAIN {search}"))
+        .bind("Katze")
+        .fetch_all(&mut *tx)
+        .await
+        .unwrap();
+    assert!(
+        plan.iter()
+            .any(|line| line.0.contains("memories_content_search_idx")),
+        "{plan:?}"
+    );
+    sqlx_core::query::query("UPDATE memories SET content = 'Hunde spielen'")
+        .execute(&mut *tx)
+        .await
+        .unwrap();
+    for (q, expected) in [("Katze", 0), ("Hund", 1)] {
+        let (count,): (i64,) = sqlx_core::query_as::query_as(search)
+            .bind(q)
+            .fetch_one(&mut *tx)
+            .await
+            .unwrap();
+        assert_eq!(count, expected);
+    }
+    tx.rollback().await.unwrap();
+}

@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::StatusCode,
     Json,
 };
@@ -110,7 +110,9 @@ fn valid_input(input: &CreateMemory) -> bool {
 }
 
 pub fn routes() -> OpenApiRouter<AppState> {
-    OpenApiRouter::new().routes(routes!(list_memories, create_memory))
+    OpenApiRouter::new()
+        .routes(routes!(list_memories, create_memory))
+        .routes(routes!(search_memories))
 }
 
 /// Memory mit Provenienz für eine Persona speichern.
@@ -210,6 +212,87 @@ async fn list_memories(
     .await
     .map_err(|err| {
         crate::telemetry::database_error("list_memories", &err);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+    rows.into_iter()
+        .map(map_row)
+        .collect::<Result<Vec<_>, _>>()
+        .map(Json)
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct SearchMemories {
+    q: String,
+    #[serde(default = "default_search_limit")]
+    limit: i64,
+}
+
+fn default_search_limit() -> i64 {
+    20
+}
+
+/// Memory-Inhalte einer Persona mit deutscher Volltextsuche durchsuchen.
+#[utoipa::path(
+    get, path = "/personas/{id}/memories/search", operation_id = "searchMemories", tag = "Memories",
+    params(
+        ("id" = i64, Path, minimum = 1, description = "Positive Persona-ID"),
+        ("q" = String, Query, min_length = 1, description = "Suchtext, nicht nur Whitespace, maximal 500 UTF-8-Bytes. Deutsche Wortstämme; alle Begriffe müssen vorkommen. Keine Suchoperatorsyntax."),
+        ("limit" = Option<i64>, Query, minimum = 1, maximum = 100, description = "Maximale Ergebniszahl, Standard 20")
+    ),
+    responses(
+        (status = 200, description = "Passende Memories der Persona, Relevanz absteigend, bei Gleichstand ID aufsteigend; keine Treffer oder nur Stoppwörter ergeben []", body = [Memory]),
+        (status = 400, description = "Ungültige ID oder Query; fachliche Fehler mit leerem Body, Extraktionsfehler text/plain", body = String, content_type = "text/plain"),
+        (status = 404, description = "Persona nicht gefunden; leerer Body"),
+        (status = 500, description = "Datenbankfehler; leerer Body")
+    )
+)]
+async fn search_memories(
+    State(state): State<AppState>,
+    Path(persona_id): Path<i64>,
+    Query(input): Query<SearchMemories>,
+) -> Result<Json<Vec<Memory>>, StatusCode> {
+    if persona_id <= 0
+        || input.q.trim().is_empty()
+        || input.q.len() > 500
+        || input.q.contains('\0')
+        || !(1..=100).contains(&input.limit)
+    {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+    let exists = sqlx_core::query::query("SELECT id FROM personas WHERE id = $1")
+        .bind(persona_id)
+        .fetch_optional(&state.pool)
+        .await
+        .map_err(|err| {
+            crate::telemetry::database_error("find_persona", &err);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+    if exists.is_none() {
+        return Err(StatusCode::NOT_FOUND);
+    }
+    let rows = sqlx_core::query::query(
+        "SELECT id, persona_id, content, source,
+                CASE WHEN observed_at >= '0001-01-01T00:00:00Z'::timestamptz
+                          AND observed_at < '10000-01-01T00:00:00Z'::timestamptz
+                     THEN to_char(observed_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"')
+                END AS observed_at,
+                confirmation_status
+         FROM memories
+         WHERE persona_id = $1
+           AND to_tsvector('pg_catalog.german', content)
+               @@ plainto_tsquery('pg_catalog.german', $2)
+         ORDER BY ts_rank_cd(to_tsvector('pg_catalog.german', content),
+                             plainto_tsquery('pg_catalog.german', $2)) DESC, id ASC
+         LIMIT $3",
+    )
+    .bind(persona_id)
+    .bind(input.q.trim())
+    .bind(input.limit)
+    .fetch_all(&state.pool)
+    .await
+    .map_err(|err| {
+        crate::telemetry::database_error("search_memories", &err);
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
     rows.into_iter()

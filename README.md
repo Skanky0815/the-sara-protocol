@@ -10,16 +10,17 @@
 [![Next.js – geplant](https://img.shields.io/badge/Next.js-geplant-444444?logo=nextdotjs&logoColor=white)](https://nextjs.org/)
 Noch nicht implementiert; es gibt keine Frontend-Version. Node.js dient derzeit den Release-Werkzeugen, die Backend-Laufzeit ist Rust.
 
-Lokaler Persona- und Memory-Service mit Rust, Axum und PostgreSQL. Das Backend bietet `GET /health`, das Anlegen und Abrufen von Personas sowie persona-spezifische Memories mit Provenienz. Suche und LLM-Adapter folgen in [Sprint 1](https://github.com/Skanky0815/the-sara-protocol/milestone/1); weitere World-State- und Client-Funktionen stehen auf der [Roadmap](docs/roadmap.md).
+Lokaler Persona- und Memory-Service mit Rust, Axum und PostgreSQL. Das Backend bietet `GET /health`, das Anlegen und Abrufen von Personas sowie persona-spezifische Memories mit Provenienz. Die Volltextsuche ist in [memory-search.md](docs/memory-search.md) beschrieben; LLM-Adapter folgen in [Sprint 1](https://github.com/Skanky0815/the-sara-protocol/milestone/1); weitere World-State- und Client-Funktionen stehen auf der [Roadmap](docs/roadmap.md).
 
 ## Was schon funktioniert
 
 - Personas anlegen und gezielt abrufen.
 - Erinnerungen mit Quelle, Ereigniszeit und Bestätigungsstatus speichern und lesen.
 - Daten pro Persona isolieren und Zeitangaben vor dem Schreiben prüfen.
+- Memories pro Persona mit deutscher Volltextsuche gezielt finden.
 - Health und generierte OpenAPI-Referenz bereitstellen.
 
-[Backend v0.1.0](https://github.com/Skanky0815/the-sara-protocol/releases/tag/backend/v0.1.0) ist veröffentlicht. Die technische Sprint-0-Abnahme ist abgeschlossen; Authentifizierung, Suche und LLM-Anbindung sind noch nicht implementiert.
+[Backend v0.1.0](https://github.com/Skanky0815/the-sara-protocol/releases/tag/backend/v0.1.0) ist veröffentlicht. Die technische Sprint-0-Abnahme ist abgeschlossen; Authentifizierung, semantische Suche und LLM-Anbindung sind noch nicht implementiert.
 
 ## Repository-Struktur
 

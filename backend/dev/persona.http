@@ -48,3 +48,6 @@ GET {{baseUrl}}/personas/{{personaId}}/memories
 
 ### Verify missing persona returns 404
 GET {{baseUrl}}/personas/999999999/memories
+
+### Memories einer Persona durchsuchen (deutsche Wortstämme, UND)
+GET {{baseUrl}}/personas/{{personaId}}/memories/search?q=Katze%20Kaffee&limit=20
