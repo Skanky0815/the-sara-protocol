@@ -39,3 +39,5 @@ Die [Persona-API](persona-api.md) verwendet das bestehende Schema ohne Migration
 Die [OpenAPI-Referenz](api-reference.md) wird gemeinsam mit den Axum-Routen registriert und unter `/openapi.json` ausgeliefert. Handler- und DTO-Annotationen bilden den Vertrag; JSON-Schema-Vertragstests vergleichen echte Antworten damit. Siehe [ADR 0006](adr/0006-generated-openapi.md).
 
 Die [Memory-Suche](memory-search.md) verwendet einen persona-gefilterten PostgreSQL-Volltextindex mit fester deutscher Konfiguration. Rangfolge, Grenzen und Bewertung von pgvector als Folgearbeit stehen in [ADR 0010](adr/0010-persona-memory-full-text-search.md).
+
+Der lokale [MCP-Pilot](local-mcp.md) startet dieselbe Binary mit `--mcp` als stdio-Prozess, bindet eine konfigurierte Persona fest und verwendet ausschließlich lesende GET-Aufrufe auf den gemeinsamen Axum-Router im Prozess. Er öffnet keinen HTTP-Port und benötigt keinen LLM-Adapter. Entscheidung und Grenzen: [ADR 0011](adr/0011-local-mcp-stdio.md).

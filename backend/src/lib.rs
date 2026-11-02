@@ -1,4 +1,5 @@
 pub mod config;
+pub mod mcp;
 pub mod memories;
 pub mod personas;
 pub mod telemetry;
