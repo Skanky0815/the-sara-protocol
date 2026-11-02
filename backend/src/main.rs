@@ -1,11 +1,16 @@
 use std::process::ExitCode;
-use the_sara_protocol::{config::Config, telemetry};
+use the_sara_protocol::{config::Config, mcp, telemetry};
 use tokio::net::TcpListener;
 
 #[tokio::main]
 async fn main() -> ExitCode {
-    // Existing environment variables take precedence over values in .env.
-    dotenvy::dotenv().ok();
+    // The local pilot has separate credentials; never fall back to the HTTP .env.
+    // Existing environment variables retain precedence in either mode.
+    if std::env::args_os().nth(1).is_some_and(|arg| arg == "--mcp") {
+        dotenvy::from_path(".env.mcp").ok();
+    } else {
+        dotenvy::dotenv().ok();
+    }
     if telemetry::init().is_err() {
         // The subscriber is unavailable; do not print potentially sensitive errors.
         return ExitCode::FAILURE;
@@ -17,6 +22,23 @@ async fn main() -> ExitCode {
 }
 
 async fn run() -> Result<(), ()> {
+    let args: Vec<_> = std::env::args_os().skip(1).collect();
+    let mcp_mode = args.len() == 1 && args[0] == "--mcp";
+    if !args.is_empty() && !mcp_mode {
+        tracing::error!(
+            stage = "config",
+            error_kind = "invalid_arguments",
+            "use no arguments for HTTP or --mcp for local MCP"
+        );
+        return Err(());
+    }
+    let persona_id = if mcp_mode {
+        Some(mcp::parse_persona_id(std::env::var("MCP_PERSONA_ID").ok().as_deref()).map_err(|reason| {
+            tracing::error!(stage = "config", error_kind = "invalid_mcp_persona", %reason, "MCP configuration rejected");
+        })?)
+    } else {
+        None
+    };
     tracing::info!(stage = "startup", "starting backend");
     let config = Config::from_env().map_err(|reason| {
         // Config returns fixed validation messages, never supplied values.
@@ -42,6 +64,10 @@ async fn run() -> Result<(), ()> {
         );
     })?;
     tracing::info!(stage = "migrations", "migrations applied");
+
+    if let Some(persona_id) = persona_id {
+        return mcp::serve_stdio(pool, persona_id).await.map_err(|_| ());
+    }
 
     let listener = TcpListener::bind((config.host, config.port))
         .await

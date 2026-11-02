@@ -19,6 +19,7 @@ Lokaler Persona- und Memory-Service mit Rust, Axum und PostgreSQL. Das Backend b
 - Daten pro Persona isolieren und Zeitangaben vor dem Schreiben prüfen.
 - Memories pro Persona mit deutscher Volltextsuche gezielt finden.
 - Health und generierte OpenAPI-Referenz bereitstellen.
+- Lokalen lesenden [MCP-Piloten](docs/local-mcp.md) für Desktop-Clients starten (App-Abnahme noch offen).
 
 [Backend v0.1.0](https://github.com/Skanky0815/the-sara-protocol/releases/tag/backend/v0.1.0) ist veröffentlicht. Die technische Sprint-0-Abnahme ist abgeschlossen; Authentifizierung, semantische Suche und LLM-Anbindung sind noch nicht implementiert.
 
@@ -69,6 +70,7 @@ Die [Release- und Abnahmeanleitung](docs/releases.md#abnahme-ohne-lokalen-build)
 - [Architektur und API-Planung](docs/architecture.md)
 - [Generierte API-Referenz (OpenAPI)](docs/api-reference.md)
 - [Personas lokal verwenden](docs/persona-api.md)
+- [Lokaler MCP-Pilot für die Mac-App](docs/local-mcp.md)
 - [Technischer Sprint-0-Abnahmenachweis nach Bugfix](docs/acceptance/2026-10-30-sprint0-retest.md) – [Freigabe #43](https://github.com/Skanky0815/the-sara-protocol/issues/43)
 - [Komponentenversionen und Releases](docs/releases.md)
 - [Architekturentscheidungen](docs/adr/README.md)
