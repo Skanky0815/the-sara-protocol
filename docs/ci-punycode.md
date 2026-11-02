@@ -13,3 +13,7 @@ Die gepflegte offizielle [Version v7.1.0](https://github.com/actions/setup-node/
 Ein eigener Bundle-Patch wäre wartungsintensiv und unnötig. Globale Warnungsunterdrückung oder ein Downgrade beheben die Ursache nicht. Ein breites Upgrade anderer Actions gehört nicht zu dieser Änderung; Warnungen von Artefakt-Actions im Hauptschritt sind separat zu behandeln.
 
 Lokaler Vergleich mit Node.js 24.22.1 und `node --trace-deprecation dist/cache-save/index.js`, ohne Token oder GitHub-Umgebungsdaten: v4 erzeugt DEP0040 mit Stack zu Modul 4876, v7.1.0 beendet denselben Aufruf erfolgreich ohne Deprecation-Warnung. Beide melden lediglich, dass kein Cache konfiguriert ist. Für den echten Cleanup-Nachweis dient der Workflow „Workflow validation“ auf dem PR-Commit, der dieselbe gepinnte Action verwendet. Release-Workflows werden dafür nicht manuell ausgelöst, da sie Veröffentlichungen verändern können.
+
+## GitHub-Actions-Nachweis
+
+[Workflow validation 41403925779](https://github.com/Skanky0815/the-sara-protocol/actions/runs/41403925779/job/125141579204) auf Commit `1024b123cfd6ee31daff414553896e2fb1f6af16` ist erfolgreich: actionlint, 18 Python-Tests und 7 Release-Tests bestanden. Der setup-node-Post-Schritt um 07:04:44 UTC am 02.11.2026 enthält keine DEP0040-Warnung. Die unabhängige Action `actions/setup-python@v5` meldet im selben Lauf weiterhin DEP0040 (Haupt- und Post-Schritt); das ist nicht die Ursache des ursprünglichen Release-Cleanup-Befunds und wird hier nicht durch ein weiteres ungeprüftes Upgrade erweitert.
