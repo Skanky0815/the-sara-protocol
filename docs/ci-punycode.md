@@ -17,3 +17,27 @@ Lokaler Vergleich mit Node.js 24.22.1 und `node --trace-deprecation dist/cache-s
 ## GitHub-Actions-Nachweis
 
 [Workflow validation 41403925779](https://github.com/Skanky0815/the-sara-protocol/actions/runs/41403925779/job/125141579204) auf Commit `1024b123cfd6ee31daff414553896e2fb1f6af16` ist erfolgreich: actionlint, 18 Python-Tests und 7 Release-Tests bestanden. Der setup-node-Post-Schritt um 07:04:44 UTC am 02.11.2026 enthält keine DEP0040-Warnung. Die unabhängige Action `actions/setup-python@v5` meldet im selben Lauf weiterhin DEP0040 (Haupt- und Post-Schritt); das ist nicht die Ursache des ursprünglichen Release-Cleanup-Befunds und wird hier nicht durch ein weiteres ungeprüftes Upgrade erweitert.
+
+## Erweiterte Workflow-Prüfung am 02.11.2026
+
+Auf Ricos ausdrücklichen Folgeauftrag wurden alle sieben Workflow-Dateien geprüft. Die offiziellen Release-Tags wurden über die GitHub-API auf Commit-SHAs aufgelöst und die README-/Action-Verträge auf verwendete Inputs und Laufzeiten geprüft.
+
+| Bestandteil | Vorher | Ergebnis |
+| --- | --- | --- |
+| checkout | v4 | v7.0.1, SHA-gepinnt in allen Workflows |
+| setup-python | v5 | v7.1.0, SHA-gepinnt; behebt den weiteren alten Node-/Cache-Pfad |
+| upload-artifact | v4 | v7.0.2, SHA-gepinnt |
+| download-artifact | v4 | v8.0.2, SHA-gepinnt |
+| rust-cache | bewegliches v2 | aktuelles v2.9.3, SHA-gepinnt |
+| install-action | älterer v2-SHA | v2.89.0, SHA-gepinnt |
+| actionlint | 1.7.7 | 1.7.12 |
+| pytest | 8.3.5 | 9.2.0 |
+| setup-node | v4 | v7.1.0 wie oben |
+| Docker-Actions | gepinnte v4/v7/v4 | bereits aktuelle Releases: setup-buildx v4.4.1, build-push v7.4.0, login v4.7.0 |
+| cargo-audit | 0.22.2 | aktuellstes cargo-audit-Release, unverändert |
+
+Die aktualisierten JavaScript-Actions verwenden Node.js 24. Die gehosteten Runner erfüllen die Mindestversion 2.327.1 (checkout-Container-Credentials: 2.329.0). Der Delivery-Workflow prüft weiterhin Herkunft, Push-Ereignis und main-Branch; checkout v7 benötigt hier kein unsicheres Fork-Opt-in. Upload behält das standardmäßige ZIP-Format, Namen, Pfade und Metadaten; download v8 unterstützt diese benannten Artefakte. Die Prüfung umfasst den echten Upload-/Download-/Image-Smoke-Pfad für amd64 und arm64 in der PR-CI.
+
+Python 3.12, Node.js 24, PostgreSQL 17 und die Ubuntu-24.04-Runner sind weiterhin unterstützte Laufzeiten und bleiben erhalten. Der native Build ist bewusst auf Rust 1.98/Bookworm festgelegt; das verfügbare Rust 1.99.1 wäre ein separater Toolchain-Wechsel und gehört nicht zur hier bestätigten Action-/Prüfwerkzeug-Aktualisierung. Rust-QA verwendet bereits `stable`. Debian Bookworm bleibt die gemeinsame glibc-Basis von Build und Runtime. Keine Berechtigungen, Release-Trigger oder Veröffentlichungsregeln wurden erweitert.
+
+Quellen: offizielle Release-Seiten von [checkout](https://github.com/actions/checkout/releases/tag/v7.0.1), [setup-python](https://github.com/actions/setup-python/releases/tag/v7.1.0), [upload-artifact](https://github.com/actions/upload-artifact/releases/tag/v7.0.2), [download-artifact](https://github.com/actions/download-artifact/releases/tag/v8.0.2), [rust-cache](https://github.com/Swatinem/rust-cache/releases/tag/v2.9.3), [install-action](https://github.com/taiki-e/install-action/releases/tag/v2.89.0), [actionlint](https://github.com/rhysd/actionlint/releases/tag/v1.7.12) und [pytest](https://github.com/pytest-dev/pytest/releases/tag/9.2.0). Alternative: individuelle Bundle-Patches würden eigene Wartung erfordern; die gepflegten offiziellen Actions decken die bestehenden Anforderungen ab.

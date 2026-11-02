@@ -24,7 +24,7 @@ jobs:
     container: rust:1.98-bookworm
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.source-sha }}
           persist-credentials: false
@@ -36,7 +36,7 @@ jobs:
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           test "$(uname -m)" = "$MACHINE"
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           workspaces: backend -> target
           key: release-bookworm-rust198-${{ matrix.arch }}
@@ -53,7 +53,7 @@ jobs:
           cp backend/target/release/the-sara-protocol binary/
           checksum=$(sha256sum binary/the-sara-protocol | cut -d ' ' -f1)
           printf '{"source_sha":"%s","architecture":"%s","kind":"binary","sha256":"%s"}\n' "$SOURCE_SHA" "$ARCH" "$checksum" > binary/metadata.json
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: backend-binary-${{ inputs.source-sha }}-${{ matrix.arch }}-${{ github.run_id }}
           path: binary/
@@ -74,11 +74,11 @@ jobs:
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.source-sha }}
           persist-credentials: false
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: backend-binary-${{ inputs.source-sha }}-${{ matrix.arch }}-${{ github.run_id }}
           path: package/
@@ -116,7 +116,7 @@ jobs:
           docker save --output runtime/image.tar sara-backend:smoke
           checksum=$(sha256sum runtime/image.tar | cut -d ' ' -f1)
           printf '{"source_sha":"%s","architecture":"%s","kind":"image","sha256":"%s"}\n' "$SOURCE_SHA" "$ARCH" "$checksum" > runtime/metadata.json
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: backend-runtime-${{ inputs.source-sha }}-${{ matrix.arch }}-${{ github.run_id }}
           path: runtime/
